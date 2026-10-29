@@ -1,0 +1,29 @@
+{
+  "name": "looper3",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Looper3 loop gate - per-action autonomy gate for the six harness types. Phase 1: tool-tier registry + global floor store.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:tiers": "tsx scripts/check-tool-tiers.ts",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "verify": "npm run typecheck && npm run check:tiers && npm run test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.6",
+    "fast-check": "^4.10.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "configVersion": "1.0.0",
+  "paperOnly": true,
+  "harnessCaps": {
+    "research": "autonomous",
+    "analysis": "autonomous",
+    "monitoring": "autonomous",
+    "business_process": "on_loop",
+    "build": "on_loop",
+    "execution": "in_loop"
+  },
+  "smeMaxAutonomy": {
+    "crypto": "on_loop",
+    "nfl": "on_loop",
+    "research": "autonomous",
+    "coding": "on_loop"
+  },
+  "tierCaps": {
+    "1": "autonomous",
+    "2": "autonomous",
+    "3": "on_loop",
+    "4": "in_loop"
+  },
+  "inLoopTimeoutsMinutes": {
+    "tier3Forced": 30,
+    "tier4": 15
+  },
+  "oncallHeartbeatHours": 8,
+  "todo": {
+    "PRD_OQ1_approvalNotificationChannel": "TODO (undecided): Telegram vs Pushover vs custom PWA. No notification code exists in phase 1; M4 owns it.",
+    "PRD_OQ2_defaultVetoWindowPerHarness": "TODO (undecided): e.g. 120s for business_process. No veto window is implemented in phase 1; M4 owns it.",
+    "PRD_OQ3_compensatingActions": "TODO (undecided): which build/business_process tools have a true compensating action. The registry lists provisional values only.",
+    "PRD_OQ4_heartbeatUx": "TODO (undecided): manual check-in vs calendar vs both. Only the flag storage is implemented in phase 1.",
+    "PRD_OQ5_batchedApprovals": "TODO (undecided): batching repeated tier-3 approvals. Not implemented.",
+    "PRD_OQ6_dailyPortfolioThresholds": "TODO (undecided): exact daily spend/loss limits that raise the global floor. No trigger is wired in phase 1 (M5).",
+    "smeMaxAutonomyPlaceholders": "TODO (placeholder values, need SME owner sign-off before M4): crypto=on_loop, nfl=on_loop, research=autonomous, coding=on_loop are conservative guesses, not decisions."
+  }
+}
