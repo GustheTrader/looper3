@@ -35,6 +35,12 @@ export interface PolicyConfig {
   readonly tierCaps: Readonly<Record<TierCapKey, Mode>>;
   readonly inLoopTimeoutsMinutes: Readonly<{ tier3Forced: number; tier4: number }>;
   readonly oncallHeartbeatHours: number;
+  /**
+   * TODO PLACEHOLDER (PRD open question 2): single veto-window duration. The PRD asks for a
+   * per-harness window (e.g. 120 s for business_process); per-harness is undecided, so one
+   * placeholder value is used and the decision is left to the owner.
+   */
+  readonly vetoWindowSeconds: number;
   /** PRD open questions, kept as named TODO values (never decided by code). */
   readonly todo: Readonly<Record<string, string>>;
 }
@@ -78,6 +84,7 @@ const REQUIRED_KEYS = [
   "tierCaps",
   "inLoopTimeoutsMinutes",
   "oncallHeartbeatHours",
+  "vetoWindowSeconds",
   "todo",
 ] as const;
 
@@ -244,6 +251,17 @@ export function parsePolicyConfig(raw: unknown, source = "<memory>"): PolicyConf
     issues.push(`oncallHeartbeatHours must be a number in (0, 168], got ${describe(heartbeat)}`);
   }
 
+  // --- vetoWindowSeconds (TODO placeholder for PRD OQ2) -------------------
+  const vetoWindowSeconds = raw["vetoWindowSeconds"];
+  if (
+    typeof vetoWindowSeconds !== "number" ||
+    !Number.isInteger(vetoWindowSeconds) ||
+    vetoWindowSeconds <= 0 ||
+    vetoWindowSeconds > 3600
+  ) {
+    issues.push(`vetoWindowSeconds must be an integer between 1 and 3600, got ${describe(vetoWindowSeconds)}`);
+  }
+
   // --- todo --------------------------------------------------------------
   const todo: Record<string, string> = {};
   const rawTodo = raw["todo"];
@@ -271,6 +289,7 @@ export function parsePolicyConfig(raw: unknown, source = "<memory>"): PolicyConf
     tierCaps: Object.freeze(tierCaps as Record<TierCapKey, Mode>),
     inLoopTimeoutsMinutes: Object.freeze(inLoopTimeoutsMinutes as { tier3Forced: number; tier4: number }),
     oncallHeartbeatHours: heartbeat as number,
+    vetoWindowSeconds: vetoWindowSeconds as number,
     todo: Object.freeze(todo),
   });
 }

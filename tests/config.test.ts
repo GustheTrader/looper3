@@ -63,13 +63,14 @@ describe("shipped policy config", () => {
   it("loads and pins the PRD values", () => {
     const config = loadPolicyFromFile(POLICY_PATH);
 
-    expect(config.configVersion).toBe("1.0.0");
+    expect(config.configVersion).toBe("1.1.0");
     expect(config.paperOnly).toBe(true);
     expect(config.harnessCaps).toEqual(BASELINE_HARNESS_CAPS);
     expect(config.harnessCaps.execution).toBe("in_loop");
     expect(config.tierCaps).toEqual({ "1": "autonomous", "2": "autonomous", "3": "on_loop", "4": "in_loop" });
     expect(config.inLoopTimeoutsMinutes).toEqual({ tier3Forced: 30, tier4: 15 });
     expect(config.oncallHeartbeatHours).toBe(8);
+    expect(config.vetoWindowSeconds).toBe(120);
     expect(Object.keys(config.smeMaxAutonomy).sort()).toEqual([...SME_IDS].sort());
   });
 
@@ -234,6 +235,10 @@ describe("policy config validation fails closed", () => {
     expectInvalid(withMutation((raw) => { raw["oncallHeartbeatHours"] = 0; }), /oncallHeartbeatHours/);
     expectInvalid(withMutation((raw) => { raw["oncallHeartbeatHours"] = 169; }), /oncallHeartbeatHours/);
     expectInvalid(withMutation((raw) => { raw["oncallHeartbeatHours"] = "8"; }), /oncallHeartbeatHours/);
+    expectInvalid(withMutation((raw) => { raw["vetoWindowSeconds"] = 0; }), /vetoWindowSeconds/);
+    expectInvalid(withMutation((raw) => { raw["vetoWindowSeconds"] = 1.5; }), /vetoWindowSeconds/);
+    expectInvalid(withMutation((raw) => { raw["vetoWindowSeconds"] = 4000; }), /vetoWindowSeconds/);
+    expectInvalid(withMutation((raw) => delete raw["vetoWindowSeconds"]), /vetoWindowSeconds/);
   });
 
   it("requires non-empty string TODO entries", () => {
@@ -296,7 +301,7 @@ describe("paper mode guard", () => {
     const first = activePolicy();
     const second = activePolicy();
     expect(second).toBe(first);
-    expect(first.configVersion).toBe("1.0.0");
+    expect(first.configVersion).toBe("1.1.0");
     expect(first.harnessCaps.execution).toBe<Mode>("in_loop");
   });
 });

@@ -15,6 +15,7 @@ import {
   isTier,
   modeRank,
   type Binding,
+  type FloorSource,
   type HarnessId,
   type Mode,
   type SmeId,
@@ -112,16 +113,28 @@ export function effectiveMode(
 /**
  * Deterministic tie-break order for `binding`. Lower index wins when several caps sit at the
  * effective rank: floor (runtime safety) > tier (intrinsic risk) > sme (domain policy) > harness
- * (broadest cap). Documented in PHASE_1_REPORT.md.
+ * (broadest cap). `wanted` is only reported when NO cap sits at the effective rank.
  */
 export const BINDING_PRECEDENCE = ["floor", "tier", "sme", "harness"] as const satisfies readonly Binding[];
+
+/**
+ * Which floor bound the decision. `both` when the run floor and the global floor are equally
+ * strict, `run` when the run floor is stricter, `global` when the global floor is stricter.
+ * Pure; does not change the mode math (the gate always uses strictest(runFloor, globalFloor)).
+ */
+export function floorSource(runFloor: Mode, globalFloor: Mode): FloorSource {
+  const run = rankOf(runFloor);
+  const global = rankOf(globalFloor);
+  if (run === global) return "both";
+  return run < global ? "run" : "global";
+}
 
 /**
  * Which cap produced the decision (FR-2/FR-3). Returns "unregistered" whenever the tier is not a
  * valid 1-4 value, matching the gate's unregistered-tool path.
  *
- * If `wanted` alone is stricter than every cap there is no cap to blame; the strictest cap is
- * reported so the field is always populated (PRD ambiguity, listed in PHASE_1_REPORT.md).
+ * If `wanted` alone is stricter than every cap, "wanted" is returned (M3 addition - FR-3's union
+ * had no label for that case).
  */
 export function bindingCap(
   wanted: Mode,
@@ -136,7 +149,7 @@ export function bindingCap(
   const mode = effectiveMode(wanted, harness, sme, tier, floor, policy);
   const rank = rankOf(mode);
 
-  const caps: Record<Exclude<Binding, "unregistered">, Mode> = {
+  const caps: Record<(typeof BINDING_PRECEDENCE)[number], Mode> = {
     floor: isMode(floor) ? floor : STRICTEST_MODE,
     tier: tierCapFor(tier, policy),
     sme: smeCapFor(sme, policy),
@@ -147,12 +160,8 @@ export function bindingCap(
     if (rankOf(caps[binding]) === rank) return binding;
   }
 
-  // No cap sits at the effective rank: `wanted` was stricter than all of them.
-  let strictestCap: Exclude<Binding, "unregistered"> = BINDING_PRECEDENCE[0];
-  for (const binding of BINDING_PRECEDENCE) {
-    if (rankOf(caps[binding]) < rankOf(caps[strictestCap])) strictestCap = binding;
-  }
-  return strictestCap;
+  // No cap sits at the effective rank: the caller's own wanted mode was the binding constraint.
+  return "wanted";
 }
 
 /** Convenience: the four cap values plus the resulting mode, for telemetry (FR-9). */

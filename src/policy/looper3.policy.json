@@ -1,5 +1,5 @@
 {
-  "configVersion": "1.0.0",
+  "configVersion": "1.1.0",
   "paperOnly": true,
   "harnessCaps": {
     "research": "autonomous",
@@ -26,9 +26,10 @@
     "tier4": 15
   },
   "oncallHeartbeatHours": 8,
+  "vetoWindowSeconds": 120,
   "todo": {
-    "PRD_OQ1_approvalNotificationChannel": "TODO (undecided): Telegram vs Pushover vs custom PWA. No notification code exists in phase 1; M4 owns it.",
-    "PRD_OQ2_defaultVetoWindowPerHarness": "TODO (undecided): e.g. 120s for business_process. No veto window is implemented in phase 1; M4 owns it.",
+    "PRD_OQ1_approvalNotificationChannel": "TODO (undecided): Telegram vs Pushover vs custom PWA. M3 registers a notification INTENT in an in-memory outbox only; no channel is wired (M4).",
+    "PRD_OQ2_defaultVetoWindowPerHarness": "TODO (undecided): vetoWindowSeconds=120 is one placeholder value, not a decision. PRD OQ2 asks for a per-harness window (e.g. 120s for business_process); M3 computes a single deadline from this placeholder.",
     "PRD_OQ3_compensatingActions": "TODO (undecided): which build/business_process tools have a true compensating action. The registry lists provisional values only.",
     "PRD_OQ4_heartbeatUx": "TODO (undecided): manual check-in vs calendar vs both. Only the flag storage is implemented in phase 1.",
     "PRD_OQ5_batchedApprovals": "TODO (undecided): batching repeated tier-3 approvals. Not implemented.",

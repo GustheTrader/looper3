@@ -7,6 +7,7 @@ import {
   bindingCap,
   clamp,
   effectiveMode,
+  floorSource,
   strictest,
   type SmeCaps,
 } from "../src/policy/modes.js";
@@ -22,14 +23,14 @@ import {
   isSmeId,
   isTier,
   modeRank,
-  type Binding,
   type Mode,
   type Tier,
 } from "../src/policy/types.js";
 
 const policy = loadPolicyFromFile(defaultPolicyPath());
 
-type CapBinding = Exclude<Binding, "unregistered">;
+/** The four cap labels (everything in Binding except "wanted" and "unregistered"). */
+type CapBinding = (typeof BINDING_PRECEDENCE)[number];
 
 const tiersUnderTest: readonly (Tier | undefined)[] = [...TIERS, undefined];
 
@@ -115,7 +116,7 @@ describe("effectiveMode - exhaustive (wanted x harness x sme x tier x floor)", (
               }
 
               bindingChecked += 1;
-              expect(["harness", "sme", "tier", "floor"]).toContain(binding);
+              expect([...BINDING_PRECEDENCE, "wanted"]).toContain(binding);
 
               // 5. binding names a cap that actually sits at the effective rank, or - when only
               //    `wanted` is strictest - the strictest cap.
@@ -123,8 +124,8 @@ describe("effectiveMode - exhaustive (wanted x harness x sme x tier x floor)", (
               if (atRank.length > 0) {
                 expect(atRank).toContain(binding as CapBinding);
               } else {
-                const strictestCapRank = Math.min(...BINDING_PRECEDENCE.map((name) => modeRank(caps[name])));
-                expect(modeRank(caps[binding as CapBinding])).toBe(strictestCapRank);
+                // No cap sits at the effective rank: the caller's wanted mode is what bound it.
+                expect(binding).toBe("wanted");
               }
             }
           }
@@ -193,11 +194,19 @@ describe("effectiveMode - FR-2/FR-3 scenarios", () => {
     expect(effectiveMode("autonomous", "research", { maxAutonomy: "nope" as Mode }, 1, "autonomous", policy)).toBe("in_loop");
   });
 
-  it("reports the strictest cap when wanted alone is stricter than every cap", () => {
+  it('reports binding "wanted" when the caller asked for the strictest mode', () => {
     expect(effectiveMode("in_loop", "research", "research", 1, "autonomous", policy)).toBe("in_loop");
-    expect(["floor", "tier", "sme", "harness"]).toContain(
-      bindingCap("in_loop", "research", "research", 1, "autonomous", policy),
-    );
+    expect(bindingCap("in_loop", "research", "research", 1, "autonomous", policy)).toBe("wanted");
+    // ... and a cap wins again as soon as one is at the effective rank.
+    expect(bindingCap("in_loop", "execution", "research", 1, "autonomous", policy)).toBe("harness");
+  });
+
+  it("identifies which floor bound the decision", () => {
+    expect(floorSource("autonomous", "autonomous")).toBe("both");
+    expect(floorSource("in_loop", "autonomous")).toBe("run");
+    expect(floorSource("autonomous", "on_loop")).toBe("global");
+    expect(floorSource("on_loop", "in_loop")).toBe("global");
+    expect(floorSource("in_loop", "in_loop")).toBe("both");
   });
 });
 

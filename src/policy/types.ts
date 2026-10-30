@@ -60,9 +60,23 @@ export function isSmeId(value: unknown): value is SmeId {
   return typeof value === "string" && (SME_IDS as readonly string[]).includes(value);
 }
 
-/** Which cap produced the decision (FR-2/FR-3). */
-export const BINDINGS = ["harness", "sme", "tier", "floor", "unregistered"] as const;
+/**
+ * Which cap produced the decision (FR-2/FR-3).
+ *
+ * "wanted" is an M3 addition: FR-3's original union (harness|sme|tier|floor|unregistered) has no
+ * label for "no cap bound, the caller asked for the strictest mode". Reporting a cap in that case
+ * mis-attributes the decision in telemetry, so "wanted" is added and the mode math is unchanged.
+ */
+export const BINDINGS = ["harness", "sme", "tier", "floor", "wanted", "unregistered"] as const;
 export type Binding = (typeof BINDINGS)[number];
+
+/** Which of the two floors bound the decision when binding === "floor". */
+export const FLOOR_SOURCES = ["run", "global", "both"] as const;
+export type FloorSource = (typeof FLOOR_SOURCES)[number];
+
+export function isFloorSource(value: unknown): value is FloorSource {
+  return typeof value === "string" && (FLOOR_SOURCES as readonly string[]).includes(value);
+}
 
 export function isBinding(value: unknown): value is Binding {
   return typeof value === "string" && (BINDINGS as readonly string[]).includes(value);
