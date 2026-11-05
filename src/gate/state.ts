@@ -9,7 +9,25 @@
  */
 import { Annotation } from "@langchain/langgraph";
 
-import type { Binding, FloorSource, HarnessId, Mode, SmeId, Tier } from "../policy/types.js";
+import { isMode, modeRank, type Binding, type FloorSource, type HarnessId, type Mode, type SmeId, type Tier } from "../policy/types.js";
+
+/**
+ * M5: the run floor raised by triggers is a REDUCER channel. Every write - a node update, a new
+ * invoke's input, a resume - is merged with strictest(), so nothing can loosen it once raised:
+ * the only way back is a new run. An unknown value merges as in_loop (fail closed).
+ */
+export function strictestReducer(current: Mode, update: Mode | undefined): Mode {
+  if (update === undefined) return current;
+  const next: Mode = isMode(update) ? update : "in_loop";
+  return modeRank(next) < modeRank(current) ? next : current;
+}
+
+function unionReducer(current: readonly string[], update: readonly string[] | undefined): readonly string[] {
+  if (!Array.isArray(update)) return current;
+  const merged = [...current];
+  for (const item of update) if (typeof item === "string" && !merged.includes(item)) merged.push(item);
+  return merged;
+}
 
 export interface PendingAction {
   readonly tool: string;
@@ -60,6 +78,10 @@ export const GateStateAnnotation = Annotation.Root({
   vetoExpiresAt: Annotation<number | undefined>,
   /** M4 (FR-5): on-call heartbeat read by `readFloor`, before the pure gate. Missing = inactive. */
   oncallActive: Annotation<boolean | undefined>,
+  /** M5 (FR-6): run floor raised by run triggers; tighten-only reducer, checkpointed. */
+  runFloorRaised: Annotation<Mode, Mode | undefined>({ reducer: strictestReducer, default: () => "autonomous" }),
+  /** M5: names of the run triggers that fired on this thread (append-only). */
+  runFloorTriggers: Annotation<readonly string[], readonly string[] | undefined>({ reducer: unionReducer, default: () => [] }),
   /** M4 (FR-4): approval deadline, derived from preparedAtMs and the tier in `armDeadline`. */
   approvalExpiresAt: Annotation<number | undefined>,
   /** M4: true when the decision came from a deadline (or a human answer after it). */

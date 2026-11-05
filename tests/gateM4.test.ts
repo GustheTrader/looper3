@@ -408,7 +408,7 @@ describe("FR-4 in_loop timeouts", () => {
   });
 
   it("crash at every node boundary of the timeout path: one rejection, one alert, no effect, no re-ask", async () => {
-    // initial run = 6 visits (intake..approval); the timeout resume adds approval, escalate, reject
+    // initial run = 7 visits (intake..approval); the timeout resume adds approval, escalate, reject
     for (let extra = 1; extra <= 3; extra += 1) {
       const target = harness();
       const config = threadConfig(TIER4.threadId);

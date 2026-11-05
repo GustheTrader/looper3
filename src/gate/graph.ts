@@ -1,7 +1,7 @@
 /**
  * The gate subgraph (FR-3, with the M4 deadline and escalation steps).
  *
- *   START -> intake -> readFloor -> prepare -> gateNode -> routeGate
+ *   START -> intake -> readFloor -> runTriggers -> prepare -> gateNode -> routeGate
  *                                                       |-> execute        (autonomous)
  *                                                       |-> armDeadline    (on_loop | in_loop)
  *                                                       |-> reject         (no decision)
@@ -13,6 +13,9 @@
  * `readFloor` is a separate node BEFORE `gate` so that `gate` stays pure: the only I/O in the
  * path (reading agent_flags: global floor + on-call heartbeat) happens in its own node and lands
  * in state.
+ *
+ * `runTriggers` (M5) reads this run's signals and raises the run floor (tighten-only reducer)
+ * before the gate, for the same reason: the gate itself stays pure.
  *
  * `armDeadline` (M4) registers the one deadline the chosen mode needs. It sits after the gate
  * because the mode is not known before it, and before the interrupting nodes because those must
@@ -42,6 +45,7 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
   const builder = new StateGraph(GateStateAnnotation)
     .addNode("intake", wrap("intake", nodes.intake))
     .addNode("readFloor", wrap("readFloor", nodes.readFloor))
+    .addNode("runTriggers", wrap("runTriggers", nodes.runTriggers))
     .addNode("prepare", wrap("prepare", nodes.prepare))
     .addNode("gateNode", wrap("gateNode", nodes.gate))
     .addNode("armDeadline", wrap("armDeadline", nodes.armDeadline))
@@ -52,7 +56,8 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
     .addNode("reject", wrap("reject", nodes.reject))
     .addEdge(START, "intake")
     .addEdge("intake", "readFloor")
-    .addEdge("readFloor", "prepare")
+    .addEdge("readFloor", "runTriggers")
+    .addEdge("runTriggers", "prepare")
     .addEdge("prepare", "gateNode")
     .addConditionalEdges("gateNode", nodes.routeAfterGate, {
       execute: "execute",

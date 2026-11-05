@@ -1,5 +1,5 @@
 {
-  "configVersion": "1.1.0",
+  "configVersion": "1.2.0",
   "paperOnly": true,
   "harnessCaps": {
     "research": "autonomous",
@@ -27,13 +27,33 @@
   },
   "oncallHeartbeatHours": 8,
   "vetoWindowSeconds": 120,
+  "floorTriggers": {
+    "routerConfidenceMin": 0.6,
+    "runBudget": {
+      "maxTokens": 2000000,
+      "maxDollars": 25,
+      "maxTurns": 200
+    },
+    "dataFreshnessMaxSeconds": 300,
+    "daily": {
+      "maxSpendUsd": 100,
+      "maxLossUsd": 250,
+      "dayBoundary": "UTC"
+    },
+    "maxUnresolvedOrders": 0,
+    "raiseTo": {
+      "run": "in_loop",
+      "global": "in_loop"
+    }
+  },
   "todo": {
     "PRD_OQ1_approvalNotificationChannel": "TODO (undecided): Telegram vs Pushover vs custom PWA. M3 registers a notification INTENT in an in-memory outbox only; no channel is wired (M4).",
     "PRD_OQ2_defaultVetoWindowPerHarness": "TODO (undecided): vetoWindowSeconds=120 is one placeholder value, not a decision. PRD OQ2 asks for a per-harness window (e.g. 120s for business_process); M3 computes a single deadline from this placeholder.",
     "PRD_OQ3_compensatingActions": "TODO (undecided): which build/business_process tools have a true compensating action. The registry lists provisional values only.",
     "PRD_OQ4_heartbeatUx": "TODO (undecided): manual check-in vs calendar vs both. Only the flag storage is implemented in phase 1.",
     "PRD_OQ5_batchedApprovals": "TODO (undecided): batching repeated tier-3 approvals. Not implemented.",
-    "PRD_OQ6_dailyPortfolioThresholds": "TODO (undecided): exact daily spend/loss limits that raise the global floor. No trigger is wired in phase 1 (M5).",
-    "smeMaxAutonomyPlaceholders": "TODO (placeholder values, need SME owner sign-off before M4): crypto=on_loop, nfl=on_loop, research=autonomous, coding=on_loop are conservative guesses, not decisions."
+    "PRD_OQ6_dailyPortfolioThresholds": "TODO (undecided): floorTriggers.daily.maxSpendUsd=100 and maxLossUsd=250 are placeholders, not decisions. The M5 trigger is wired and tested; the owner sets the numbers.",
+    "smeMaxAutonomyPlaceholders": "TODO (placeholder values, need SME owner sign-off before M4): crypto=on_loop, nfl=on_loop, research=autonomous, coding=on_loop are conservative guesses, not decisions.",
+    "M5_floorTriggerThresholds": "TODO (placeholders, not decisions): routerConfidenceMin=0.6, runBudget (2,000,000 tokens / $25 / 200 turns), dataFreshnessMaxSeconds=300, maxUnresolvedOrders=0, raiseTo run=in_loop and global=in_loop (the strictest choice while undecided), dayBoundary=UTC."
   }
 }

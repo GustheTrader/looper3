@@ -19,6 +19,8 @@ import type { GateDeps } from "../../src/gate/nodes.js";
 import { fireDueDeadlines, type DeadlineFiring } from "../../src/gate/deadlines.js";
 import { AlertOutbox, NotificationOutbox, SchedulerStub } from "../../src/gate/outbox.js";
 import type { GateState } from "../../src/gate/state.js";
+import type { RunSignals } from "../../src/floors/triggers.js";
+import { InMemoryFloorAlertSink } from "../../src/telemetry/floorAlerts.js";
 import { defaultPolicyPath, loadPolicyFromFile, type PolicyConfig } from "../../src/policy/config.js";
 import { TOOL_TIER, type ToolTierRegistry } from "../../src/policy/toolTiers.js";
 import type { Mode } from "../../src/policy/types.js";
@@ -45,12 +47,15 @@ export interface Harness {
   readonly scheduler: SchedulerStub;
   readonly ledger: SideEffectLedger;
   readonly alerts: AlertOutbox;
+  readonly floorAlerts: InMemoryFloorAlertSink;
   readonly dbPath: string;
   readonly policy: PolicyConfig;
   readonly nodeCounts: Record<string, number>;
   readonly nodeTrace: string[];
   readonly clock: { now(): number; advance(ms: number): void };
   setHeartbeat(active: boolean): void;
+  /** M5: what this harness reports as a thread's run signals (undefined = nothing measured). */
+  setRunSignals(threadId: string, signals: RunSignals | undefined): void;
   /** Runs the M4 deadline runner against the latest compiled graph at the harness clock. */
   fireDeadlines(): Promise<DeadlineFiring[]>;
   /**
@@ -75,6 +80,8 @@ export function createHarness(options: HarnessOptions = {}): Harness {
   const registry = options.registry ?? TOOL_TIER;
   const outbox = new NotificationOutbox({ autoConfirm: options.deliveryConfirmed ?? true });
   const alerts = new AlertOutbox();
+  const floorAlerts = new InMemoryFloorAlertSink();
+  const runSignals = new Map<string, RunSignals | undefined>();
   const scheduler = new SchedulerStub();
   const ledger = new SideEffectLedger();
   const nodeCounts: Record<string, number> = {};
@@ -98,6 +105,8 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     heartbeatActive: () => heartbeat,
     deliveryConfirmed: (key) => outbox.isDeliveryConfirmed(key),
     now: () => nowMs,
+    readRunSignals: (threadId) => runSignals.get(threadId),
+    floorAlerts,
   };
 
   const onNode = (node: string) => {
@@ -117,6 +126,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     scheduler,
     ledger,
     alerts,
+    floorAlerts,
     dbPath,
     policy,
     nodeCounts,
@@ -129,6 +139,9 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     },
     setHeartbeat: (active: boolean) => {
       heartbeat = active;
+    },
+    setRunSignals: (threadId, signals) => {
+      runSignals.set(threadId, signals);
     },
     fireDeadlines: () => fireDueDeadlines(compileGraph(), scheduler, nowMs),
     crashAtNodeVisit: (visit: number | null) => {

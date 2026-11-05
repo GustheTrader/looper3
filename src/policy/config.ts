@@ -41,8 +41,31 @@ export interface PolicyConfig {
    * placeholder value is used and the decision is left to the owner.
    */
   readonly vetoWindowSeconds: number;
+  /**
+   * M5 (FR-6) automatic floor-tightening thresholds. EVERY number here is a TODO PLACEHOLDER
+   * (PRD open question 6 and FR-6 leave them undecided); see `todo.M5_floorTriggerThresholds`.
+   */
+  readonly floorTriggers: FloorTriggerConfig;
   /** PRD open questions, kept as named TODO values (never decided by code). */
   readonly todo: Readonly<Record<string, string>>;
+}
+
+export interface FloorTriggerConfig {
+  /** Run floor rises when router confidence is BELOW this (0..1). */
+  readonly routerConfidenceMin: number;
+  /** Run floor rises when a run uses MORE than any of these. */
+  readonly runBudget: Readonly<{ maxTokens: number; maxDollars: number; maxTurns: number }>;
+  /** Run floor rises when the run's market data is OLDER than this. */
+  readonly dataFreshnessMaxSeconds: number;
+  /** Global floor rises when the day's totals across all agents are MORE than these. */
+  readonly daily: Readonly<{ maxSpendUsd: number; maxLossUsd: number; dayBoundary: "UTC" }>;
+  /** Global floor rises when MORE than this many orders are unresolved after reconciliation. */
+  readonly maxUnresolvedOrders: number;
+  /**
+   * What each scope's floor is raised TO. Must be stricter than autonomous. The kill switch is
+   * not configurable: it always raises the global floor to in_loop (FR-6).
+   */
+  readonly raiseTo: Readonly<{ run: Mode; global: Mode }>;
 }
 
 /**
@@ -85,6 +108,7 @@ const REQUIRED_KEYS = [
   "inLoopTimeoutsMinutes",
   "oncallHeartbeatHours",
   "vetoWindowSeconds",
+  "floorTriggers",
   "todo",
 ] as const;
 
@@ -262,6 +286,8 @@ export function parsePolicyConfig(raw: unknown, source = "<memory>"): PolicyConf
     issues.push(`vetoWindowSeconds must be an integer between 1 and 3600, got ${describe(vetoWindowSeconds)}`);
   }
 
+  const floorTriggers = parseFloorTriggers(raw["floorTriggers"], issues);
+
   // --- todo --------------------------------------------------------------
   const todo: Record<string, string> = {};
   const rawTodo = raw["todo"];
@@ -290,7 +316,79 @@ export function parsePolicyConfig(raw: unknown, source = "<memory>"): PolicyConf
     inLoopTimeoutsMinutes: Object.freeze(inLoopTimeoutsMinutes as { tier3Forced: number; tier4: number }),
     oncallHeartbeatHours: heartbeat as number,
     vetoWindowSeconds: vetoWindowSeconds as number,
+    floorTriggers: floorTriggers as FloorTriggerConfig,
     todo: Object.freeze(todo),
+  });
+}
+
+function parseFloorTriggers(rawValue: unknown, issues: string[]): FloorTriggerConfig | undefined {
+  if (!isPlainObject(rawValue)) {
+    issues.push(`floorTriggers must be an object, got ${describe(rawValue)}`);
+    return undefined;
+  }
+  const before = issues.length;
+  const known = ["routerConfidenceMin", "runBudget", "dataFreshnessMaxSeconds", "daily", "maxUnresolvedOrders", "raiseTo"];
+  for (const key of Object.keys(rawValue)) {
+    if (!known.includes(key)) issues.push(`floorTriggers has unknown key ${JSON.stringify(key)}`);
+  }
+
+  const number = (value: unknown, label: string, opts: { min: number; max: number; integer?: boolean; minExclusive?: boolean }) => {
+    const ok =
+      typeof value === "number" &&
+      Number.isFinite(value) &&
+      (opts.integer !== true || Number.isInteger(value)) &&
+      (opts.minExclusive === true ? value > opts.min : value >= opts.min) &&
+      value <= opts.max;
+    if (!ok) {
+      issues.push(`floorTriggers.${label} must be a ${opts.integer === true ? "whole " : ""}number in ${opts.minExclusive === true ? "(" : "["}${opts.min}, ${opts.max}], got ${describe(value)}`);
+    }
+    return value as number;
+  };
+  const object = (value: unknown, label: string, keys: readonly string[]): Record<string, unknown> => {
+    if (!isPlainObject(value)) {
+      issues.push(`floorTriggers.${label} must be an object, got ${describe(value)}`);
+      return {};
+    }
+    for (const key of Object.keys(value)) {
+      if (!keys.includes(key)) issues.push(`floorTriggers.${label} has unknown key ${JSON.stringify(key)}`);
+    }
+    return value;
+  };
+
+  const routerConfidenceMin = number(rawValue["routerConfidenceMin"], "routerConfidenceMin", { min: 0, max: 1 });
+  const budget = object(rawValue["runBudget"], "runBudget", ["maxTokens", "maxDollars", "maxTurns"]);
+  const maxTokens = number(budget["maxTokens"], "runBudget.maxTokens", { min: 0, max: 1e12, integer: true, minExclusive: true });
+  const maxDollars = number(budget["maxDollars"], "runBudget.maxDollars", { min: 0, max: 1e7, minExclusive: true });
+  const maxTurns = number(budget["maxTurns"], "runBudget.maxTurns", { min: 0, max: 1e6, integer: true, minExclusive: true });
+  const dataFreshnessMaxSeconds = number(rawValue["dataFreshnessMaxSeconds"], "dataFreshnessMaxSeconds", {
+    min: 0,
+    max: 86_400,
+    integer: true,
+    minExclusive: true,
+  });
+  const daily = object(rawValue["daily"], "daily", ["maxSpendUsd", "maxLossUsd", "dayBoundary"]);
+  const maxSpendUsd = number(daily["maxSpendUsd"], "daily.maxSpendUsd", { min: 0, max: 1e9, minExclusive: true });
+  const maxLossUsd = number(daily["maxLossUsd"], "daily.maxLossUsd", { min: 0, max: 1e9, minExclusive: true });
+  if (daily["dayBoundary"] !== "UTC") {
+    issues.push(`floorTriggers.daily.dayBoundary must be "UTC" (the only supported boundary), got ${describe(daily["dayBoundary"])}`);
+  }
+  const maxUnresolvedOrders = number(rawValue["maxUnresolvedOrders"], "maxUnresolvedOrders", { min: 0, max: 1e6, integer: true });
+  const raiseTo = object(rawValue["raiseTo"], "raiseTo", ["run", "global"]);
+  for (const scope of ["run", "global"] as const) {
+    const target = raiseTo[scope];
+    if (!isMode(target) || target === "autonomous") {
+      issues.push(`floorTriggers.raiseTo.${scope} must be in_loop or on_loop (a raise to autonomous tightens nothing), got ${describe(target)}`);
+    }
+  }
+
+  if (issues.length > before) return undefined;
+  return Object.freeze({
+    routerConfidenceMin,
+    runBudget: Object.freeze({ maxTokens, maxDollars, maxTurns }),
+    dataFreshnessMaxSeconds,
+    daily: Object.freeze({ maxSpendUsd, maxLossUsd, dayBoundary: "UTC" as const }),
+    maxUnresolvedOrders,
+    raiseTo: Object.freeze({ run: raiseTo["run"] as Mode, global: raiseTo["global"] as Mode }),
   });
 }
 

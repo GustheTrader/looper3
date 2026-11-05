@@ -84,5 +84,5 @@ describe("NFR-1 gate overhead", () => {
     } finally {
       harness.cleanup();
     }
-  });
+  }, 60_000); // report-only measurement; under full-suite parallel load 65 graph passes can exceed the 20 s default
 });

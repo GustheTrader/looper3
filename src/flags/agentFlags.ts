@@ -7,6 +7,10 @@
  *  - raiseGlobalFloor() only ever moves the floor stricter; asking for a looser value is a no-op.
  *  - lowerGlobalFloor() is the ONLY loosening path: it demands an operator identity and a reason
  *    and appends to floor_changes in the same transaction.
+ *  - M5: automatic raises by a named trigger go through raiseGlobalFloorFor(), which records
+ *    them in floor_raises (also append-only) in the same transaction. floor_raises is a separate
+ *    table on purpose: the anti-loosening trigger below trusts recent floor_changes rows, and an
+ *    automatic raise must never be able to vouch for a later loosening.
  *  - floor_changes is append-only (SQLite triggers reject UPDATE/DELETE), and a trigger on
  *    agent_flags rejects a loosening write that has no matching floor_changes row, so a raw SQL
  *    UPDATE cannot bypass the manual path either.
@@ -77,6 +81,27 @@ when old.key = 'global_floor'
  )
 begin
   select raise(abort, 'global_floor may only be loosened through lowerGlobalFloor (logged operator action)');
+end;
+
+create table if not exists floor_raises (
+  id         integer primary key autoincrement,
+  created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  from_value text not null,
+  to_value   text not null,
+  trigger    text not null check (length(trim(trigger)) > 0),
+  detail     text not null
+);
+
+create trigger if not exists floor_raises_no_update
+before update on floor_raises
+begin
+  select raise(abort, 'floor_raises is append-only: updates are rejected');
+end;
+
+create trigger if not exists floor_raises_no_delete
+before delete on floor_raises
+begin
+  select raise(abort, 'floor_raises is append-only: deletes are rejected');
 end;
 `;
 
@@ -216,6 +241,93 @@ export function raiseGlobalFloor(dbPath: string, to: Mode): FloorChangeResult {
     throw new AgentFlagsError(`global floor readback mismatch: wrote ${next}, read ${after}`);
   }
   return { changed: true, floor: after, from: current.floor };
+}
+
+export interface FloorRaiseCause {
+  /** The trigger that fired, e.g. "daily_loss" or "kill_switch". */
+  readonly trigger: string;
+  readonly detail: string;
+}
+
+/**
+ * M5 (FR-6): an automatic raise with a named cause. Same rule as raiseGlobalFloor (only ever
+ * stricter; a looser or equal target is a no-op), plus the change is recorded in floor_raises in
+ * the same transaction as the write. Nothing is recorded when the floor did not move.
+ */
+export function raiseGlobalFloorFor(dbPath: string, to: Mode, cause: FloorRaiseCause): FloorChangeResult {
+  if (!isMode(to)) {
+    throw new AgentFlagsError(`raiseGlobalFloorFor requires a known mode, received ${JSON.stringify(to)}`);
+  }
+  const trigger = typeof cause?.trigger === "string" ? cause.trigger.trim() : "";
+  if (trigger === "") throw new AgentFlagsError("raiseGlobalFloorFor requires a trigger name");
+
+  const current = tryReadGlobalFloor(dbPath);
+  if (!current.ok) return { changed: false, floor: current.floor, from: current.floor };
+  const next = strictest(current.floor, to);
+  if (next === current.floor) return { changed: false, floor: current.floor, from: current.floor };
+
+  initializeAgentFlagsStore(dbPath);
+  let db: ReturnType<typeof openReadOnly>;
+  try {
+    db = new Database(dbPath, { fileMustExist: true, timeout: 0 });
+  } catch (error) {
+    throw new AgentFlagsError(`cannot open agent_flags db for raising the floor: ${errorMessage(error)}`);
+  }
+  try {
+    db.transaction(() => {
+      db.prepare("insert into floor_raises (from_value, to_value, trigger, detail) values (?, ?, ?, ?)").run(
+        current.floor,
+        next,
+        trigger,
+        String(cause.detail ?? ""),
+      );
+      db.prepare("update agent_flags set value = ? where key = ?").run(next, GLOBAL_FLOOR_KEY);
+    })();
+  } catch (error) {
+    throw new AgentFlagsError(`raising the global floor failed: ${errorMessage(error)}`);
+  } finally {
+    db.close();
+  }
+
+  const after = readGlobalFloor(dbPath);
+  if (after !== next) throw new AgentFlagsError(`global floor readback mismatch: wrote ${next}, read ${after}`);
+  return { changed: true, floor: after, from: current.floor };
+}
+
+export interface FloorRaiseRecord {
+  readonly id: number;
+  readonly createdAt: string;
+  readonly from: string;
+  readonly to: string;
+  readonly trigger: string;
+  readonly detail: string;
+}
+
+/** Audit read of automatic raises. Throws when the log cannot be read (never []). */
+export function readFloorRaises(dbPath: string = defaultAgentFlagsPath()): readonly FloorRaiseRecord[] {
+  let db: ReturnType<typeof openReadOnly>;
+  try {
+    db = openReadOnly(dbPath);
+  } catch (error) {
+    throw new AgentFlagsError(`cannot open agent_flags db for floor_raises: ${errorMessage(error)}`);
+  }
+  try {
+    const rows = db
+      .prepare("select id, created_at, from_value, to_value, trigger, detail from floor_raises order by id asc")
+      .all() as { id: number; created_at: string; from_value: string; to_value: string; trigger: string; detail: string }[];
+    return rows.map((row) => ({
+      id: row.id,
+      createdAt: row.created_at,
+      from: row.from_value,
+      to: row.to_value,
+      trigger: row.trigger,
+      detail: row.detail,
+    }));
+  } catch (error) {
+    throw new AgentFlagsError(`cannot read floor_raises: ${errorMessage(error)}`);
+  } finally {
+    db.close();
+  }
 }
 
 export interface FloorLowerOptions {

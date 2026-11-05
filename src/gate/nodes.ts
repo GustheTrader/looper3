@@ -28,6 +28,8 @@ import type { PolicyConfig } from "../policy/config.js";
 import { idempotencyKey } from "./keys.js";
 import type { AlertOutbox, DeadlineKind, NotificationOutbox, SchedulerStub } from "./outbox.js";
 import type { SideEffectLedger } from "./executor.js";
+import { evaluateRunTriggers, type RunSignals, type RunTrigger, type TriggerHit } from "../floors/triggers.js";
+import type { FloorAlertSink } from "../telemetry/floorAlerts.js";
 import type { DecidedBy, GateDecision, GateState, GateStateUpdate, PendingAction } from "./state.js";
 import { GateInputError } from "./state.js";
 import { assertAutonomySlot, autonomySlotFor } from "./router.js";
@@ -51,6 +53,10 @@ export interface GateDeps {
   readonly deliveryConfirmed: (key: string | undefined) => boolean;
   /** Clock. Used by intake/prepare/approval/veto only - never by gate. */
   readonly now: () => number;
+  /** M5 (FR-6): this run's measured signals (router confidence, budget, freshness, drift). */
+  readonly readRunSignals: (threadId: string) => RunSignals | undefined;
+  /** M5: where floor-raise alerts go (LangSmith in M7; in-memory stand-in here). */
+  readonly floorAlerts: FloorAlertSink;
 }
 
 export interface ApprovalPrompt {
@@ -219,6 +225,7 @@ export function parseResumePayload(raw: unknown): ParsedResume | null {
 export interface GateNodes {
   readonly intake: (state: GateState) => GateStateUpdate;
   readonly readFloor: (state: GateState) => GateStateUpdate;
+  readonly runTriggers: (state: GateState) => GateStateUpdate;
   readonly prepare: (state: GateState) => GateStateUpdate;
   readonly gate: (state: GateState) => GateStateUpdate;
   readonly armDeadline: (state: GateState) => GateStateUpdate;
@@ -285,6 +292,43 @@ export function createGateNodes(deps: GateDeps): GateNodes {
    * notification is an unconditional "gate pending" intent: no approval decision has been made yet
    * and nothing here may depend on one.
    */
+  /**
+   * M5 (FR-6) run triggers. Reads this run's signals (the only I/O), evaluates them with the pure
+   * evaluator and raises `runFloorRaised` - a tighten-only reducer channel - before the gate sees
+   * it. Unreadable signals raise to in_loop. One alert per thread and trigger.
+   */
+  const runTriggers = (state: GateState): GateStateUpdate => {
+    let hits: TriggerHit<RunTrigger>[];
+    try {
+      hits = evaluateRunTriggers(deps.readRunSignals(state.threadId), policy.floorTriggers);
+    } catch (error) {
+      hits = [
+        {
+          trigger: "run_signals_unreadable",
+          raiseTo: "in_loop",
+          detail: `cannot read run signals: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ];
+    }
+    if (hits.length === 0) return {};
+
+    const raiseTo = hits.reduce<Mode>((mode, hit) => strictest(mode, hit.raiseTo), "autonomous");
+    const floorAfter = strictest(strictest(state.runFloor, state.runFloorRaised ?? "autonomous"), raiseTo);
+    for (const hit of hits) {
+      deps.floorAlerts.emitOnce({
+        key: `run:${state.threadId}:${hit.trigger}`,
+        scope: "run",
+        trigger: hit.trigger,
+        raiseTo: hit.raiseTo,
+        floorAfter,
+        detail: hit.detail,
+        threadId: state.threadId,
+        configVersion: policy.configVersion,
+      });
+    }
+    return { runFloorRaised: raiseTo, runFloorTriggers: hits.map((hit) => hit.trigger) };
+  };
+
   const prepare = (state: GateState): GateStateUpdate => {
     const pending = state.pending;
     if (pending === undefined) throw new GateInputError("prepare reached without a pending action");
@@ -314,7 +358,8 @@ export function createGateNodes(deps: GateDeps): GateNodes {
         wantedMode: state.wantedMode,
         harness: state.harness,
         sme: state.sme,
-        runFloor: state.runFloor,
+        // M5: the run floor in force is the caller's run floor tightened by any run trigger.
+        runFloor: strictest(state.runFloor, state.runFloorRaised ?? "autonomous"),
         globalFloor: state.globalFloor ?? "in_loop",
         oncallActive: state.oncallActive === true,
       },
@@ -501,6 +546,7 @@ export function createGateNodes(deps: GateDeps): GateNodes {
   return {
     intake,
     readFloor,
+    runTriggers,
     prepare,
     gate,
     armDeadline,

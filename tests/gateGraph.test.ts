@@ -41,7 +41,7 @@ describe("autonomous path", () => {
       expect(harness.outbox.deliveries).toHaveLength(1);
       // M4: deadlines are armed only for interrupting modes; an autonomous action needs none.
       expect(harness.scheduler.all).toHaveLength(0);
-      expect(harness.nodeTrace).toEqual(["intake", "readFloor", "prepare", "gateNode", "execute"]);
+      expect(harness.nodeTrace).toEqual(["intake", "readFloor", "runTriggers", "prepare", "gateNode", "execute"]);
     } finally {
       harness.cleanup();
     }

@@ -63,7 +63,7 @@ describe("shipped policy config", () => {
   it("loads and pins the PRD values", () => {
     const config = loadPolicyFromFile(POLICY_PATH);
 
-    expect(config.configVersion).toBe("1.1.0");
+    expect(config.configVersion).toBe("1.2.0");
     expect(config.paperOnly).toBe(true);
     expect(config.harnessCaps).toEqual(BASELINE_HARNESS_CAPS);
     expect(config.harnessCaps.execution).toBe("in_loop");
@@ -301,7 +301,7 @@ describe("paper mode guard", () => {
     const first = activePolicy();
     const second = activePolicy();
     expect(second).toBe(first);
-    expect(first.configVersion).toBe("1.1.0");
+    expect(first.configVersion).toBe("1.2.0");
     expect(first.harnessCaps.execution).toBe<Mode>("in_loop");
   });
 });
