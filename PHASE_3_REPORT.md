@@ -35,7 +35,9 @@ escalate* → routeDecision → execute | reject
 
 Files: `src/gate/{nodes,graph,state,outbox}.ts`, `src/gate/deadlines.ts` (new), `src/policy/types.ts` (two binding values), `src/flags/agentFlags.ts`, `src/trading/fakeTradingGraph.ts` (`gateRouteFor` now requires `{ oncallActive }`), `src/index.ts`, `scripts/bench-gate.ts`, tests.
 
-## 2. Choices the PRD left open (made minimally, all tighten-only; please confirm)
+## 2. Choices the PRD left open (made minimally, all tighten-only)
+
+**Confirmed by the owner on 2026-11-04: keep all eight as built.** Items 3, 4 and 8 are therefore decided, no longer open.
 
 1. **Where FR-5 applies.** At gate time, inside the pure gate, after `effectiveMode()` (whose math is untouched), and again at veto expiry. Order: reversibility first (property of the action), then heartbeat (property of the moment).
 2. **New binding labels** `reversibility` and `oncall`. FR-9's binding field needs to say why an on_loop action ended up in_loop.
@@ -75,7 +77,7 @@ NFR-1 gate decision, `npm run bench:gate` (50 000 iterations): autonomous read p
 
 ## 4. Open decisions (not decided here)
 
-New from M4: §2 items 3, 4 and 8.
+New from M4: none (§2 confirmed).
 
 Carried forward: build-harness tier-1 read (still on_loop, pinned by test); SME `maxAutonomy` placeholders; heartbeat format (epoch-ms, unchanged); per-harness veto window (OQ2, still 120 s placeholder); approval/alert channel (OQ1, still stub outboxes); batched approvals (OQ5); daily portfolio thresholds (OQ6, M5); NFR-1 scope (gate µs vs graph 40–70 ms); duplicate submission of a completed `tool_call_id` re-asks (needs a persisted decision record, M5/M7).
 
