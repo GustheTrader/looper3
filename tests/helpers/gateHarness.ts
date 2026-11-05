@@ -16,7 +16,8 @@ import { SideEffectLedger } from "../../src/gate/executor.js";
 import { createGateGraph } from "../../src/gate/graph.js";
 import { idempotencyKey } from "../../src/gate/keys.js";
 import type { GateDeps } from "../../src/gate/nodes.js";
-import { NotificationOutbox, SchedulerStub } from "../../src/gate/outbox.js";
+import { fireDueDeadlines, type DeadlineFiring } from "../../src/gate/deadlines.js";
+import { AlertOutbox, NotificationOutbox, SchedulerStub } from "../../src/gate/outbox.js";
 import type { GateState } from "../../src/gate/state.js";
 import { defaultPolicyPath, loadPolicyFromFile, type PolicyConfig } from "../../src/policy/config.js";
 import { TOOL_TIER, type ToolTierRegistry } from "../../src/policy/toolTiers.js";
@@ -29,7 +30,13 @@ export interface HarnessOptions {
   readonly policy?: PolicyConfig;
   readonly registry?: ToolTierRegistry;
   readonly globalFloor?: Mode;
+  /**
+   * Test convenience, NOT a production default: true unless a test says otherwise, so the M3
+   * suites keep modelling "someone is on call". Every M4 off-call path sets it to false explicitly.
+   */
   readonly heartbeatActive?: boolean;
+  /** Does the stub channel confirm delivery? Default true here; the outbox itself defaults to false. */
+  readonly deliveryConfirmed?: boolean;
 }
 
 export interface Harness {
@@ -37,12 +44,15 @@ export interface Harness {
   readonly outbox: NotificationOutbox;
   readonly scheduler: SchedulerStub;
   readonly ledger: SideEffectLedger;
+  readonly alerts: AlertOutbox;
   readonly dbPath: string;
   readonly policy: PolicyConfig;
   readonly nodeCounts: Record<string, number>;
   readonly nodeTrace: string[];
   readonly clock: { now(): number; advance(ms: number): void };
   setHeartbeat(active: boolean): void;
+  /** Runs the M4 deadline runner against the latest compiled graph at the harness clock. */
+  fireDeadlines(): Promise<DeadlineFiring[]>;
   /**
    * One-shot crash injection: the Nth node visit throws BEFORE the node body runs, aborting the
    * run at that node boundary exactly as a killed process would. The checkpoint stays at the last
@@ -63,7 +73,8 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 
   const policy = options.policy ?? loadPolicyFromFile(defaultPolicyPath());
   const registry = options.registry ?? TOOL_TIER;
-  const outbox = new NotificationOutbox();
+  const outbox = new NotificationOutbox({ autoConfirm: options.deliveryConfirmed ?? true });
+  const alerts = new AlertOutbox();
   const scheduler = new SchedulerStub();
   const ledger = new SideEffectLedger();
   const nodeCounts: Record<string, number> = {};
@@ -72,7 +83,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
   const saver: BaseCheckpointSaver = new MemorySaver();
 
   let nowMs = BASE_NOW;
-  let heartbeat = options.heartbeatActive ?? false;
+  let heartbeat = options.heartbeatActive ?? true;
   let visits = 0;
   let crashAtVisit: number | null = null;
 
@@ -82,16 +93,30 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     outbox,
     scheduler,
     ledger,
+    alerts,
     readGlobalFloor: () => readGlobalFloor(dbPath),
     heartbeatActive: () => heartbeat,
+    deliveryConfirmed: (key) => outbox.isDeliveryConfirmed(key),
     now: () => nowMs,
   };
+
+  const onNode = (node: string) => {
+    visits += 1;
+    if (crashAtVisit !== null && visits >= crashAtVisit) {
+      crashAtVisit = null; // one-shot: the "process" is dead
+      throw new Error(`simulated process death at node boundary ${visits} (${node})`);
+    }
+    nodeCounts[node] = (nodeCounts[node] ?? 0) + 1;
+    nodeTrace.push(node);
+  };
+  const compileGraph = () => createGateGraph(deps, { onNode }).compile(saver);
 
   return {
     deps,
     outbox,
     scheduler,
     ledger,
+    alerts,
     dbPath,
     policy,
     nodeCounts,
@@ -105,22 +130,12 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     setHeartbeat: (active: boolean) => {
       heartbeat = active;
     },
+    fireDeadlines: () => fireDueDeadlines(compileGraph(), scheduler, nowMs),
     crashAtNodeVisit: (visit: number | null) => {
       crashAtVisit = visit;
     },
     nodeVisits: () => visits,
-    graph: () =>
-      createGateGraph(deps, {
-        onNode: (node: string) => {
-          visits += 1;
-          if (crashAtVisit !== null && visits >= crashAtVisit) {
-            crashAtVisit = null; // one-shot: the "process" is dead
-            throw new Error(`simulated process death at node boundary ${visits} (${node})`);
-          }
-          nodeCounts[node] = (nodeCounts[node] ?? 0) + 1;
-          nodeTrace.push(node);
-        },
-      }).compile(saver),
+    graph: compileGraph,
     input: (fixture: ReplayFixture) => ({
       threadId: fixture.threadId,
       pending: { tool: fixture.tool, toolCallId: fixture.toolCallId, args: { fixture: fixture.id } },

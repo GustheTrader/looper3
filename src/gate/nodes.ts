@@ -19,13 +19,14 @@ import {
   isMode,
   isSmeId,
   type HarnessId,
+  type Binding,
   type Mode,
   type SmeId,
   type Tier,
 } from "../policy/types.js";
 import type { PolicyConfig } from "../policy/config.js";
 import { idempotencyKey } from "./keys.js";
-import type { NotificationOutbox, SchedulerStub } from "./outbox.js";
+import type { AlertOutbox, DeadlineKind, NotificationOutbox, SchedulerStub } from "./outbox.js";
 import type { SideEffectLedger } from "./executor.js";
 import type { DecidedBy, GateDecision, GateState, GateStateUpdate, PendingAction } from "./state.js";
 import { GateInputError } from "./state.js";
@@ -37,10 +38,17 @@ export interface GateDeps {
   readonly outbox: NotificationOutbox;
   readonly scheduler: SchedulerStub;
   readonly ledger: SideEffectLedger;
+  /** M4 (FR-4): where timeout escalations go. Channel is PRD open question 1; stub only. */
+  readonly alerts: AlertOutbox;
   /** Wired to readGlobalFloor() from the Phase 1 agent_flags store. */
   readonly readGlobalFloor: () => Mode;
   /** FR-5 on-call heartbeat; false (fail closed) when it cannot be read. */
   readonly heartbeatActive: () => boolean;
+  /**
+   * M4 (FR-5): has the channel confirmed delivery of this action's notification? Required, but not
+   * sufficient, for an on_loop auto-approve. False on any doubt.
+   */
+  readonly deliveryConfirmed: (key: string | undefined) => boolean;
   /** Clock. Used by intake/prepare/approval/veto only - never by gate. */
   readonly now: () => number;
 }
@@ -59,7 +67,8 @@ export interface VetoPrompt {
 }
 
 export type GateRoute = "execute" | "vetoWindow" | "approval" | "reject";
-export type DecisionRoute = "execute" | "reject";
+export type DecisionRoute = "execute" | "reject" | "escalate";
+export type DeadlineRoute = "approval" | "vetoWindow" | "reject";
 
 // ---------------------------------------------------------------------------------------------
 // Pure gate evaluation
@@ -72,20 +81,42 @@ export interface GateInput {
   readonly sme: SmeId | string;
   readonly runFloor: Mode;
   readonly globalFloor: Mode;
+  /** M4 (FR-5): on-call heartbeat at gate time. Anything but literal true counts as inactive. */
+  readonly oncallActive: boolean;
 }
 
 /**
  * The whole gate decision as one pure function: tier from the static registry, floor =
  * strictest(runFloor, globalFloor), mode = five-way reduction, binding = which cap bound it.
  * Unknown tool => tier 4 / in_loop / binding "unregistered" (FR-3).
+ *
+ * M4 (FR-5) runs AFTER the reduction and can only tighten: an on_loop result stays on_loop only
+ * if the action is reversible or has a registered compensating action, AND an on-call heartbeat
+ * is active. Otherwise it becomes in_loop, with binding "reversibility" or "oncall". The
+ * five-way math in effectiveMode() is unchanged.
  */
 export function gateDecisionFor(input: GateInput, policy: PolicyConfig, registry: ToolTierRegistry = TOOL_TIER): GateDecision {
   // Membership must be checked against the SAME registry the tier is read from; using the
   // default registry here would mark a tool from an injected registry as unregistered.
   const tier: Tier | undefined = registeredTierIn(input.tool, registry);
   const floor = strictest(input.runFloor, input.globalFloor);
-  const mode = effectiveMode(input.wantedMode, input.harness, input.sme, tier, floor, policy);
-  const binding = bindingCap(input.wantedMode, input.harness, input.sme, tier, floor, policy);
+  const reduced = effectiveMode(input.wantedMode, input.harness, input.sme, tier, floor, policy);
+  let mode: Mode = reduced;
+  let binding: Binding = bindingCap(input.wantedMode, input.harness, input.sme, tier, floor, policy);
+  let convertedFromOnLoop: GateDecision["convertedFromOnLoop"];
+  if (reduced === "on_loop") {
+    // Reversibility first: it is a property of the action, the heartbeat is a property of the moment.
+    if (!onLoopEligible(input.tool, registry)) {
+      mode = "in_loop";
+      binding = "reversibility";
+      convertedFromOnLoop = "irreversible";
+    } else if (input.oncallActive !== true) {
+      mode = "in_loop";
+      binding = "oncall";
+      convertedFromOnLoop = "no_oncall";
+    }
+  }
+  const touchesMoney = tier === undefined ? false : registry[input.tool]?.touchesMoney === true;
   return {
     mode,
     tier: tier ?? 4,
@@ -93,6 +124,8 @@ export function gateDecisionFor(input: GateInput, policy: PolicyConfig, registry
     floor,
     floorSource: floorSource(input.runFloor, input.globalFloor),
     configVersion: policy.configVersion,
+    touchesMoney,
+    ...(convertedFromOnLoop === undefined ? {} : { convertedFromOnLoop }),
   };
 }
 
@@ -121,8 +154,33 @@ export function routeAfterGate(state: GateState): GateRoute {
   return routeForMode(gate.mode);
 }
 
+/**
+ * After approval / veto. FR-4: a decision that came from a deadline is escalated once before it
+ * goes on - always when it rejected the action, and on EVERY timeout for touchesMoney actions.
+ */
 export function routeAfterDecision(state: GateState): DecisionRoute {
+  if (state.timedOut === true && state.escalated !== true) {
+    if (state.approved !== true || state.gate?.touchesMoney === true) return "escalate";
+  }
   return state.approved === true ? "execute" : "reject";
+}
+
+/** After armDeadline: only the two interrupting modes get here; anything else fails closed. */
+export function routeAfterDeadline(state: GateState): DeadlineRoute {
+  switch (state.gate?.mode) {
+    case "in_loop":
+      return "approval";
+    case "on_loop":
+      return "vetoWindow";
+    default:
+      return "reject";
+  }
+}
+
+/** FR-4 approval expiry: tier 4 => tier4 minutes, any other tier forced into in_loop => tier3Forced. */
+export function approvalTimeoutMs(tier: Tier, policy: PolicyConfig): number {
+  const minutes = tier === 4 ? policy.inLoopTimeoutsMinutes.tier4 : policy.inLoopTimeoutsMinutes.tier3Forced;
+  return minutes * 60_000;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -163,12 +221,15 @@ export interface GateNodes {
   readonly readFloor: (state: GateState) => GateStateUpdate;
   readonly prepare: (state: GateState) => GateStateUpdate;
   readonly gate: (state: GateState) => GateStateUpdate;
+  readonly armDeadline: (state: GateState) => GateStateUpdate;
+  readonly escalate: (state: GateState) => GateStateUpdate;
   readonly approval: (state: GateState) => GateStateUpdate;
   readonly vetoWindow: (state: GateState) => GateStateUpdate;
   readonly execute: (state: GateState) => GateStateUpdate;
   readonly reject: (state: GateState) => GateStateUpdate;
   readonly routeAfterGate: (state: GateState) => GateRoute;
   readonly routeAfterDecision: (state: GateState) => DecisionRoute;
+  readonly routeAfterDeadline: (state: GateState) => DeadlineRoute;
 }
 
 export function createGateNodes(deps: GateDeps): GateNodes {
@@ -204,7 +265,10 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     return { wantedMode: wanted, routed: true, configVersion: policy.configVersion };
   };
 
-  /** Reads the global floor from agent_flags (Phase 1 store). Failure => in_loop. */
+  /**
+   * Reads both agent_flags values the pure gate needs, so the gate itself does no I/O:
+   * the global floor (failure => in_loop) and, M4, the on-call heartbeat (failure => inactive).
+   */
   const readFloor = (_state: GateState): GateStateUpdate => {
     let floor: Mode = "in_loop";
     try {
@@ -213,11 +277,11 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     } catch {
       floor = "in_loop";
     }
-    return { globalFloor: floor };
+    return { globalFloor: floor, oncallActive: safeBool(deps.heartbeatActive) };
   };
 
   /**
-   * Repeatable side effects, keyed by sha(thread_id + tool_call_id). Runs BEFORE gate, so the
+   * Repeatable side effect, keyed by sha(thread_id + tool_call_id). Runs BEFORE gate, so the
    * notification is an unconditional "gate pending" intent: no approval decision has been made yet
    * and nothing here may depend on one.
    */
@@ -237,14 +301,8 @@ export function createGateNodes(deps: GateDeps): GateNodes {
       createdAtMs: nowMs,
       vetoExpiresAt,
     });
-    deps.scheduler.scheduleOnce({
-      key,
-      threadId: state.threadId,
-      toolCallId: pending.toolCallId,
-      resumeAtMs: vetoExpiresAt,
-      kind: "veto_deadline",
-    });
-
+    // M4: the deadline is registered by `armDeadline`, after the gate, because only then is the
+    // mode (and so which deadline applies, if any) known.
     return { prepareKey: key, preparedAtMs: nowMs, vetoExpiresAt };
   };
 
@@ -258,18 +316,45 @@ export function createGateNodes(deps: GateDeps): GateNodes {
         sme: state.sme,
         runFloor: state.runFloor,
         globalFloor: state.globalFloor ?? "in_loop",
+        oncallActive: state.oncallActive === true,
       },
       policy,
       registry,
     ),
   });
 
+  /**
+   * M4 (FR-4/FR-5): registers the ONE deadline that applies to the chosen mode, keyed like
+   * prepare, so a replay never registers a second job. Uses no clock: the deadline is derived
+   * from preparedAtMs, so a re-run computes the same value.
+   */
+  const armDeadline = (state: GateState): GateStateUpdate => {
+    const pending = state.pending;
+    const gateDecision = state.gate;
+    if (pending === undefined || gateDecision === undefined || state.preparedAtMs === undefined) {
+      return { approved: false, rejectReason: "deadline could not be armed (fail closed)" };
+    }
+    const key = state.prepareKey ?? idempotencyKey(state.threadId, pending.toolCallId);
+    let kind: DeadlineKind;
+    let resumeAtMs: number;
+    if (gateDecision.mode === "in_loop") {
+      kind = "approval_deadline";
+      resumeAtMs = state.preparedAtMs + approvalTimeoutMs(gateDecision.tier, policy);
+    } else if (gateDecision.mode === "on_loop") {
+      kind = "veto_deadline";
+      resumeAtMs = state.vetoExpiresAt ?? state.preparedAtMs + policy.vetoWindowSeconds * 1000;
+    } else {
+      return { approved: false, rejectReason: "deadline armed for a non-interrupting mode (fail closed)" };
+    }
+    deps.scheduler.scheduleOnce({ key, threadId: state.threadId, toolCallId: pending.toolCallId, resumeAtMs, kind });
+    return kind === "approval_deadline" ? { approvalExpiresAt: resumeAtMs } : { vetoExpiresAt: resumeAtMs };
+  };
+
   /** FR-4: in_loop approval. interrupt() first, no side effects before it. */
   const approval = (state: GateState): GateStateUpdate => {
     const tier: Tier = state.gate?.tier ?? 4;
-    const timeoutMinutes =
-      tier === 4 ? policy.inLoopTimeoutsMinutes.tier4 : policy.inLoopTimeoutsMinutes.tier3Forced;
-    const expiresAt = (state.preparedAtMs ?? deps.now()) + timeoutMinutes * 60_000;
+    const expiresAt =
+      state.approvalExpiresAt ?? (state.preparedAtMs ?? deps.now()) + approvalTimeoutMs(tier, policy);
 
     const raw = interrupt<ApprovalPrompt, unknown>({
       kind: "approval",
@@ -284,10 +369,10 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     }
     if (decision.by === "timeout") {
       // FR-4: an in_loop approval NEVER auto-approves on expiry.
-      return { approved: false, decidedBy: "timeout", rejectReason: "timeout" };
+      return { approved: false, decidedBy: "timeout", rejectReason: "timeout", timedOut: true };
     }
     if (deps.now() > expiresAt) {
-      return { approved: false, decidedBy: "timeout", rejectReason: "timeout" };
+      return { approved: false, decidedBy: "timeout", rejectReason: "timeout", timedOut: true };
     }
     if (!decision.approved) {
       return { approved: false, decidedBy: "human", rejectReason: decision.reason };
@@ -308,28 +393,49 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     }
 
     if (decision.by === "timeout") {
-      if (!decision.approved) {
-        return { approved: false, decidedBy: "timeout", rejectReason: "timeout" };
+      // A deadline that claims to have fired before the window closed is not a deadline.
+      if (deps.now() < expiresAt) {
+        return {
+          approved: false,
+          decidedBy: "policy",
+          rejectReason: "timeout resume before the veto window closed (fail closed)",
+        };
       }
-      if (!deps.heartbeatActive()) {
+      if (!decision.approved) {
+        return { approved: false, decidedBy: "timeout", rejectReason: "timeout", timedOut: true };
+      }
+      // FR-5: the heartbeat is checked again at expiry - it may have lapsed during the window.
+      if (!safeBool(deps.heartbeatActive)) {
         return {
           approved: false,
           decidedBy: "policy",
           rejectReason: "on_loop auto-approve refused: no active on-call heartbeat (FR-5 fail closed)",
+          timedOut: true,
         };
       }
       if (!onLoopEligible(state.pending?.tool ?? "", registry)) {
         return {
           approved: false,
           decidedBy: "policy",
-          rejectReason: "on_loop auto-approve refused: action is not reversible and has no registered compensating action (FR-5 fail closed)",
+          rejectReason:
+            "on_loop auto-approve refused: action is not reversible and has no registered compensating action (FR-5 fail closed)",
+          timedOut: true,
         };
       }
-      return { approved: true, decidedBy: "timeout" };
+      // FR-5: confirmed delivery is required but not sufficient on its own (checked last).
+      if (!safeBool(() => deps.deliveryConfirmed(state.prepareKey))) {
+        return {
+          approved: false,
+          decidedBy: "policy",
+          rejectReason: "on_loop auto-approve refused: notification delivery not confirmed (FR-5 fail closed)",
+          timedOut: true,
+        };
+      }
+      return { approved: true, decidedBy: "timeout", timedOut: true };
     }
 
     if (deps.now() > expiresAt) {
-      return { approved: false, decidedBy: "timeout", rejectReason: "veto window expired (fail closed)" };
+      return { approved: false, decidedBy: "timeout", rejectReason: "veto window expired (fail closed)", timedOut: true };
     }
     if (!decision.approved) {
       return { approved: false, decidedBy: "human", rejectReason: decision.reason };
@@ -364,6 +470,27 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     return { executed: true, executeKey: key };
   };
 
+  /**
+   * FR-4 escalation, once per action key. Runs only after a deadline-driven decision; the alert
+   * channel itself is PRD open question 1, so this hands the alert to an idempotent stub outbox.
+   */
+  const escalate = (state: GateState): GateStateUpdate => {
+    const pending = state.pending;
+    if (pending !== undefined) {
+      deps.alerts.escalateOnce({
+        key: state.prepareKey ?? idempotencyKey(state.threadId, pending.toolCallId),
+        threadId: state.threadId,
+        tool: pending.tool,
+        toolCallId: pending.toolCallId,
+        kind: "gate_timeout",
+        severity: state.gate?.touchesMoney === true ? "critical" : "high",
+        approved: state.approved === true,
+        reason: state.rejectReason ?? (state.approved === true ? "auto-approved on veto expiry" : "timeout"),
+      });
+    }
+    return { escalated: true };
+  };
+
   /** Terminal reject. Pure: records why, touches nothing else. */
   const reject = (state: GateState): GateStateUpdate => ({
     executed: false,
@@ -371,7 +498,29 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     rejectReason: state.rejectReason ?? (state.gate === undefined ? "no gate decision (fail closed)" : "rejected (fail closed)"),
   });
 
-  return { intake, readFloor, prepare, gate, approval, vetoWindow, execute, reject, routeAfterGate, routeAfterDecision };
+  return {
+    intake,
+    readFloor,
+    prepare,
+    gate,
+    armDeadline,
+    approval,
+    vetoWindow,
+    escalate,
+    execute,
+    reject,
+    routeAfterGate,
+    routeAfterDecision,
+    routeAfterDeadline,
+  };
+}
+
+function safeBool(read: () => boolean): boolean {
+  try {
+    return read() === true;
+  } catch {
+    return false;
+  }
 }
 
 /** FR-5 eligibility: an action may stay on_loop only if it is reversible or has a compensation. */

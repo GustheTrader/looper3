@@ -39,7 +39,8 @@ describe("autonomous path", () => {
       expect(state.approved).toBeUndefined();
       expect(harness.ledger.effectsFor(keyFor(fixture))).toBe(1);
       expect(harness.outbox.deliveries).toHaveLength(1);
-      expect(harness.scheduler.all).toHaveLength(1);
+      // M4: deadlines are armed only for interrupting modes; an autonomous action needs none.
+      expect(harness.scheduler.all).toHaveLength(0);
       expect(harness.nodeTrace).toEqual(["intake", "readFloor", "prepare", "gateNode", "execute"]);
     } finally {
       harness.cleanup();
@@ -221,6 +222,8 @@ describe("on_loop veto window (FR-5 fail-closed defaults)", () => {
       const graph = harness.graph();
       const config = threadConfig(fixture.threadId);
       await graph.invoke(harness.input(fixture), config);
+      // M4: a timeout resume only counts once the window has actually closed.
+      harness.clock.advance(harness.policy.vetoWindowSeconds * 1000);
       const final = await graph.invoke(new Command({ resume: { approved: true, by: "timeout" } }), config);
       const state = stateOf(final) as GateState;
       expect(state.approved).toBe(true);
@@ -231,12 +234,18 @@ describe("on_loop veto window (FR-5 fail-closed defaults)", () => {
     }
   });
 
-  it("REJECTS the timeout auto-approve when no on-call heartbeat is active", async () => {
-    const harness = createHarness({ heartbeatActive: false });
+  it("REJECTS the timeout auto-approve when the on-call heartbeat lapsed during the window", async () => {
+    // M4: with no heartbeat at gate time the action never reaches the veto window at all (see
+    // gateM4.test.ts). This covers the other half: on call at gate time, gone at expiry.
+    const harness = createHarness({ heartbeatActive: true });
     try {
       const graph = harness.graph();
       const config = threadConfig(fixture.threadId);
-      await graph.invoke(harness.input(fixture), config);
+      const first = await graph.invoke(harness.input(fixture), config);
+      expect(prompts(first)[0]?.kind).toBe("veto");
+
+      harness.setHeartbeat(false);
+      harness.clock.advance(harness.policy.vetoWindowSeconds * 1000);
       const final = await graph.invoke(new Command({ resume: { approved: true, by: "timeout" } }), config);
       const state = stateOf(final) as GateState;
 
@@ -250,7 +259,7 @@ describe("on_loop veto window (FR-5 fail-closed defaults)", () => {
     }
   });
 
-  it("REJECTS the timeout auto-approve for an irreversible action with no compensating action", async () => {
+  it("never offers a veto window for an irreversible action with no compensating action (M4: in_loop instead)", async () => {
     const registry: ToolTierRegistry = {
       ...TOOL_TIER,
       flush_and_forget: { tool: "flush_and_forget", tier: 3 as Tier, reversible: false } satisfies ToolTierEntry,
@@ -261,12 +270,9 @@ describe("on_loop veto window (FR-5 fail-closed defaults)", () => {
       const graph = harness.graph();
       const config = threadConfig(custom.threadId);
       const first = await graph.invoke(harness.input(custom), config);
-      expect(prompts(first)[0]?.kind).toBe("veto");
-
-      const final = await graph.invoke(new Command({ resume: { approved: true, by: "timeout" } }), config);
-      const state = stateOf(final) as GateState;
-      expect(state.approved).toBe(false);
-      expect(state.rejectReason).toMatch(/not reversible and has no registered compensating action/);
+      expect(prompts(first)[0]?.kind).toBe("approval");
+      expect(stateOf(first).gate?.binding).toBe("reversibility");
+      expect(stateOf(first).gate?.convertedFromOnLoop).toBe("irreversible");
     } finally {
       harness.cleanup();
     }
@@ -441,6 +447,7 @@ describe("gate node purity", () => {
         sme: "crypto" as const,
         runFloor: "autonomous" as const,
         globalFloor: "autonomous" as const,
+        oncallActive: true,
       };
       const first = gateDecisionFor(input, harness.policy);
       for (let index = 0; index < 1000; index += 1) {

@@ -25,6 +25,10 @@ export interface GateDecision {
   readonly floor: Mode;
   readonly floorSource: FloorSource;
   readonly configVersion: string;
+  /** M4: registry flag, copied here so routing after a timeout needs no registry lookup. */
+  readonly touchesMoney: boolean;
+  /** M4 (FR-5): set when the reduction said on_loop but the gate converted it to in_loop. */
+  readonly convertedFromOnLoop?: "irreversible" | "no_oncall";
 }
 
 export type DecidedBy = "policy" | "human" | "timeout";
@@ -54,6 +58,14 @@ export const GateStateAnnotation = Annotation.Root({
   rejectReason: Annotation<string | undefined>,
   decidedBy: Annotation<DecidedBy | undefined>,
   vetoExpiresAt: Annotation<number | undefined>,
+  /** M4 (FR-5): on-call heartbeat read by `readFloor`, before the pure gate. Missing = inactive. */
+  oncallActive: Annotation<boolean | undefined>,
+  /** M4 (FR-4): approval deadline, derived from preparedAtMs and the tier in `armDeadline`. */
+  approvalExpiresAt: Annotation<number | undefined>,
+  /** M4: true when the decision came from a deadline (or a human answer after it). */
+  timedOut: Annotation<boolean | undefined>,
+  /** M4 (FR-4): true once the timeout escalation was handed to the alert outbox. */
+  escalated: Annotation<boolean | undefined>,
   /** Clock reading taken once, in `prepare`, so later nodes never need their own. */
   preparedAtMs: Annotation<number | undefined>,
   prepareKey: Annotation<string | undefined>,

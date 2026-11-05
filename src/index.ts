@@ -12,5 +12,6 @@ export * from "./gate/executor.js";
 export * from "./gate/router.js";
 export * from "./gate/nodes.js";
 export * from "./gate/graph.js";
+export * from "./gate/deadlines.js";
 export * from "./gate/postgresSaver.js";
 export * from "./trading/fakeTradingGraph.js";

@@ -15,6 +15,7 @@ const AUTONOMOUS_INPUT: GateInput = {
   sme: "research",
   runFloor: "autonomous",
   globalFloor: "autonomous",
+  oncallActive: true,
 };
 
 function percentile(sorted: readonly number[], p: number): number {

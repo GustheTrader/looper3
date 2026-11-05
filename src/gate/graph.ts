@@ -1,16 +1,22 @@
 /**
- * The gate subgraph (FR-3).
+ * The gate subgraph (FR-3, with the M4 deadline and escalation steps).
  *
  *   START -> intake -> readFloor -> prepare -> gateNode -> routeGate
  *                                                       |-> execute        (autonomous)
- *                                                       |-> vetoWindow     (on_loop)
- *                                                       |-> approval       (in_loop)
+ *                                                       |-> armDeadline    (on_loop | in_loop)
  *                                                       |-> reject         (no decision)
- *   approval   -> routeDecision -> execute | reject
- *   vetoWindow -> routeDecision -> execute | reject
+ *   armDeadline -> routeDeadline -> vetoWindow (on_loop) | approval (in_loop) | reject
+ *   approval   -> routeDecision -> execute | escalate | reject
+ *   vetoWindow -> routeDecision -> execute | escalate | reject
+ *   escalate   -> routeDecision -> execute | reject
  *
  * `readFloor` is a separate node BEFORE `gate` so that `gate` stays pure: the only I/O in the
- * path (reading agent_flags) happens in its own node and lands in state.
+ * path (reading agent_flags: global floor + on-call heartbeat) happens in its own node and lands
+ * in state.
+ *
+ * `armDeadline` (M4) registers the one deadline the chosen mode needs. It sits after the gate
+ * because the mode is not known before it, and before the interrupting nodes because those must
+ * call interrupt() first with nothing before it.
  *
  * Not one awaiting node: approval and vetoWindow are separate interrupting nodes downstream of
  * routeGate, exactly as the PRD requires.
@@ -38,8 +44,10 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
     .addNode("readFloor", wrap("readFloor", nodes.readFloor))
     .addNode("prepare", wrap("prepare", nodes.prepare))
     .addNode("gateNode", wrap("gateNode", nodes.gate))
+    .addNode("armDeadline", wrap("armDeadline", nodes.armDeadline))
     .addNode("approval", wrap("approval", nodes.approval))
     .addNode("vetoWindow", wrap("vetoWindow", nodes.vetoWindow))
+    .addNode("escalate", wrap("escalate", nodes.escalate))
     .addNode("execute", wrap("execute", nodes.execute))
     .addNode("reject", wrap("reject", nodes.reject))
     .addEdge(START, "intake")
@@ -48,12 +56,18 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
     .addEdge("prepare", "gateNode")
     .addConditionalEdges("gateNode", nodes.routeAfterGate, {
       execute: "execute",
-      vetoWindow: "vetoWindow",
-      approval: "approval",
+      vetoWindow: "armDeadline",
+      approval: "armDeadline",
       reject: "reject",
     })
-    .addConditionalEdges("approval", nodes.routeAfterDecision, { execute: "execute", reject: "reject" })
-    .addConditionalEdges("vetoWindow", nodes.routeAfterDecision, { execute: "execute", reject: "reject" })
+    .addConditionalEdges("armDeadline", nodes.routeAfterDeadline, {
+      approval: "approval",
+      vetoWindow: "vetoWindow",
+      reject: "reject",
+    })
+    .addConditionalEdges("approval", nodes.routeAfterDecision, { execute: "execute", escalate: "escalate", reject: "reject" })
+    .addConditionalEdges("vetoWindow", nodes.routeAfterDecision, { execute: "execute", escalate: "escalate", reject: "reject" })
+    .addConditionalEdges("escalate", nodes.routeAfterDecision, { execute: "execute", escalate: "reject", reject: "reject" })
     .addEdge("execute", END)
     .addEdge("reject", END);
 
@@ -64,3 +78,4 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
 }
 
 export type GateGraph = ReturnType<typeof createGateGraph>;
+export type CompiledGateGraph = ReturnType<GateGraph["compile"]>;

@@ -18,6 +18,8 @@ import { createHarness, fixtureById, keyFor, loadReplayFixtures, promptValues, s
 const policy = loadPolicyFromFile(defaultPolicyPath());
 const fixtures = loadReplayFixtures();
 const legacyGraph = createFakeTradingGraph(policy);
+/** M3 locks were recorded with someone on call; M4 off-call behaviour is tested separately. */
+const ONCALL = { oncallActive: true } as const;
 
 const routeMode = (route: LegacyRoute): number => ROUTE_STRICTNESS[route];
 
@@ -48,7 +50,7 @@ describe("replay set integrity", () => {
 describe("gate routing on the recorded replay set", () => {
   it("matches the locked gate outcome for all 30 fixtures", () => {
     for (const fixture of fixtures) {
-      expect(gateRouteFor(fixture, policy), `${fixture.id} ${fixture.tool} in ${fixture.harness}`).toBe(
+      expect(gateRouteFor(fixture, policy, ONCALL), `${fixture.id} ${fixture.tool} in ${fixture.harness}`).toBe(
         fixture.gateRoute,
       );
     }
@@ -66,7 +68,7 @@ describe("gate routing on the recorded replay set", () => {
     expect(executionFixtures.length).toBe(6);
     for (const fixture of executionFixtures) {
       const legacy = legacyGraph.route(fixture);
-      const gate = gateRouteFor(fixture, policy);
+      const gate = gateRouteFor(fixture, policy, ONCALL);
       expect(legacy, `${fixture.id}`).toBe("approval");
       expect(gate, `${fixture.id}`).toBe(legacy);
     }
@@ -75,14 +77,14 @@ describe("gate routing on the recorded replay set", () => {
   it("is never LOOSER than the legacy router for any fixture", () => {
     for (const fixture of fixtures) {
       const legacy = legacyGraph.route(fixture);
-      const gate = gateRouteFor(fixture, policy);
+      const gate = gateRouteFor(fixture, policy, ONCALL);
       expect(isAtLeastAsStrict(gate, legacy), `${fixture.id}: gate ${gate} vs legacy ${legacy}`).toBe(true);
       expect(routeMode(gate)).toBeGreaterThanOrEqual(routeMode(legacy));
     }
   });
 
   it("tightens exactly 10 fixtures (tier cap, floor, or unregistered tool) and loosens none", () => {
-    const tightened = fixtures.filter((fixture) => gateRouteFor(fixture, policy) !== legacyGraph.route(fixture));
+    const tightened = fixtures.filter((fixture) => gateRouteFor(fixture, policy, ONCALL) !== legacyGraph.route(fixture));
     expect(tightened.map((fixture) => fixture.id)).toEqual([
       "r09",
       "r10",
@@ -96,7 +98,7 @@ describe("gate routing on the recorded replay set", () => {
       "r25",
     ]);
     for (const fixture of tightened) {
-      expect(routeMode(gateRouteFor(fixture, policy))).toBeGreaterThan(routeMode(legacyGraph.route(fixture)));
+      expect(routeMode(gateRouteFor(fixture, policy, ONCALL))).toBeGreaterThan(routeMode(legacyGraph.route(fixture)));
     }
   });
 
@@ -150,6 +152,7 @@ describe("documented gap: tier-1 read in the build harness", () => {
             sme: "research",
             runFloor: "autonomous",
             globalFloor: "autonomous",
+            oncallActive: true,
           },
           policy,
         ).binding,

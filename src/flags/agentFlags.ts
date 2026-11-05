@@ -390,3 +390,19 @@ export function setOncallHeartbeat(
 
   return readOncallHeartbeat(dbPath, nowMs);
 }
+
+/**
+ * M4 (FR-5) operator check-in: on call for `hours` from now (default from policy, 8). This is the
+ * mechanism only; how an operator triggers it (manual, calendar, both) is PRD open question 4.
+ */
+export function checkInOnCall(dbPath: string, operator: string, hours: number, nowMs: number = Date.now()): HeartbeatStatus {
+  if (!Number.isFinite(hours) || hours <= 0) {
+    throw new AgentFlagsError(`checkInOnCall requires a positive number of hours, received ${JSON.stringify(hours)}`);
+  }
+  return setOncallHeartbeat(dbPath, nowMs + hours * 3_600_000, operator, nowMs);
+}
+
+/** M4 (FR-5) operator check-out: the heartbeat expires immediately (deadline = now). */
+export function checkOutOnCall(dbPath: string, operator: string, nowMs: number = Date.now()): HeartbeatStatus {
+  return setOncallHeartbeat(dbPath, Math.max(1, nowMs), operator, nowMs);
+}

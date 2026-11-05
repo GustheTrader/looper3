@@ -90,8 +90,8 @@ describe("NFR-2 chaos: kill the process at every node boundary and resume", () =
   it("counts the node boundaries of each flow (baseline)", async () => {
     const inLoop = harness();
     await inLoop.graph().invoke(inLoop.input(IN_LOOP_FIXTURE()), threadConfig("thread_baseline_inloop"));
-    expect(inLoop.nodeTrace).toEqual(["intake", "readFloor", "prepare", "gateNode", "approval"]);
-    expect(inLoop.nodeVisits()).toBe(5);
+    expect(inLoop.nodeTrace).toEqual(["intake", "readFloor", "prepare", "gateNode", "armDeadline", "approval"]);
+    expect(inLoop.nodeVisits()).toBe(6);
 
     const autonomous = harness();
     await autonomous.graph().invoke(autonomous.input(AUTONOMOUS_FIXTURE()), threadConfig("thread_baseline_auto"));
@@ -101,9 +101,9 @@ describe("NFR-2 chaos: kill the process at every node boundary and resume", () =
 
   it("in_loop flow: one notification, one execution, one decision, no re-ask, no skipped gate", async () => {
     const fixture = IN_LOOP_FIXTURE();
-    // 1..6 covers death before intake, before each intermediate node, before the interrupt and
-    // before execute (the 6th visit only happens after the approval resume).
-    for (let crashAt = 1; crashAt <= 6; crashAt += 1) {
+    // 1..7 covers death before intake, before each intermediate node (incl. M4 armDeadline),
+    // before the interrupt and before execute (the 7th visit only happens after the resume).
+    for (let crashAt = 1; crashAt <= 7; crashAt += 1) {
       const target = harness();
       const run = await runWithCrash(target, fixture, crashAt);
       const label = `crash at node visit ${crashAt}`;
@@ -141,7 +141,7 @@ describe("NFR-2 chaos: kill the process at every node boundary and resume", () =
 
   it("a rejected approval stays rejected across a crash at every boundary", async () => {
     const fixture = IN_LOOP_FIXTURE();
-    for (let crashAt = 1; crashAt <= 5; crashAt += 1) {
+    for (let crashAt = 1; crashAt <= 7; crashAt += 1) {
       const target = harness();
       const run = await runWithCrash(target, fixture, crashAt, { approved: false, by: "jeffg", reason: "no" });
       const label = `crash at node visit ${crashAt}`;

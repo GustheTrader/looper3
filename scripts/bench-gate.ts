@@ -23,6 +23,7 @@ const CASES: readonly { name: string; input: GateInput }[] = [
       sme: "research",
       runFloor: "autonomous",
       globalFloor: "autonomous",
+      oncallActive: true,
     },
   },
   {
@@ -34,6 +35,7 @@ const CASES: readonly { name: string; input: GateInput }[] = [
       sme: "coding",
       runFloor: "autonomous",
       globalFloor: "autonomous",
+      oncallActive: true,
     },
   },
   {
@@ -45,6 +47,7 @@ const CASES: readonly { name: string; input: GateInput }[] = [
       sme: "research",
       runFloor: "autonomous",
       globalFloor: "autonomous",
+      oncallActive: true,
     },
   },
 ];

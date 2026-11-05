@@ -69,11 +69,14 @@ export function legacyRouteFor(fixture: ReplayFixture, policy: PolicyConfig): Le
   return routeByMode(legacyEffectiveMode(fixture.wantedMode, fixture.harness, fixture.sme, policy));
 }
 
-export function gateRouteFor(
-  fixture: ReplayFixture,
-  policy: PolicyConfig,
-  registry: ToolTierRegistry = TOOL_TIER,
-): LegacyRoute {
+export interface GateRouteOptions {
+  /** M4 (FR-5): must be stated - the M3 locks were recorded with someone on call. */
+  readonly oncallActive: boolean;
+  readonly registry?: ToolTierRegistry;
+}
+
+export function gateRouteFor(fixture: ReplayFixture, policy: PolicyConfig, options: GateRouteOptions): LegacyRoute {
+  const registry = options.registry ?? TOOL_TIER;
   const decision = gateDecisionFor(
     {
       tool: fixture.tool,
@@ -82,6 +85,7 @@ export function gateRouteFor(
       sme: fixture.sme,
       runFloor: fixture.runFloor,
       globalFloor: fixture.globalFloor,
+      oncallActive: options.oncallActive,
     },
     policy,
     registry,

@@ -67,7 +67,12 @@ export function isSmeId(value: unknown): value is SmeId {
  * label for "no cap bound, the caller asked for the strictest mode". Reporting a cap in that case
  * mis-attributes the decision in telemetry, so "wanted" is added and the mode math is unchanged.
  */
-export const BINDINGS = ["harness", "sme", "tier", "floor", "wanted", "unregistered"] as const;
+/**
+ * "reversibility" and "oncall" are M4 additions (FR-5): the five-way reduction produced on_loop,
+ * but the action was converted to in_loop because it is irreversible with no compensating action
+ * ("reversibility") or because no on-call heartbeat was active at gate time ("oncall").
+ */
+export const BINDINGS = ["harness", "sme", "tier", "floor", "wanted", "unregistered", "reversibility", "oncall"] as const;
 export type Binding = (typeof BINDINGS)[number];
 
 /** Which of the two floors bound the decision when binding === "floor". */
