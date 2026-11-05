@@ -21,6 +21,8 @@ import { AlertOutbox, NotificationOutbox, SchedulerStub } from "../../src/gate/o
 import type { GateState } from "../../src/gate/state.js";
 import type { RunSignals } from "../../src/floors/triggers.js";
 import { InMemoryFloorAlertSink } from "../../src/telemetry/floorAlerts.js";
+import { SqliteGateAuditStore } from "../../src/audit/auditStore.js";
+import { InMemoryDecisionTelemetry } from "../../src/audit/decisionRecord.js";
 import { defaultPolicyPath, loadPolicyFromFile, type PolicyConfig } from "../../src/policy/config.js";
 import { TOOL_TIER, type ToolTierRegistry } from "../../src/policy/toolTiers.js";
 import type { Mode } from "../../src/policy/types.js";
@@ -48,7 +50,10 @@ export interface Harness {
   readonly ledger: SideEffectLedger;
   readonly alerts: AlertOutbox;
   readonly floorAlerts: InMemoryFloorAlertSink;
+  readonly audit: SqliteGateAuditStore;
+  readonly decisionTelemetry: InMemoryDecisionTelemetry;
   readonly dbPath: string;
+  readonly auditPath: string;
   readonly policy: PolicyConfig;
   readonly nodeCounts: Record<string, number>;
   readonly nodeTrace: string[];
@@ -82,6 +87,9 @@ export function createHarness(options: HarnessOptions = {}): Harness {
   const alerts = new AlertOutbox();
   const floorAlerts = new InMemoryFloorAlertSink();
   const runSignals = new Map<string, RunSignals | undefined>();
+  const auditPath = path.join(dir, "gate_audit.sqlite");
+  const audit = new SqliteGateAuditStore(auditPath);
+  const decisionTelemetry = new InMemoryDecisionTelemetry();
   const scheduler = new SchedulerStub();
   const ledger = new SideEffectLedger();
   const nodeCounts: Record<string, number> = {};
@@ -107,6 +115,8 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     now: () => nowMs,
     readRunSignals: (threadId) => runSignals.get(threadId),
     floorAlerts,
+    audit,
+    decisionTelemetry,
   };
 
   const onNode = (node: string) => {
@@ -127,7 +137,10 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     ledger,
     alerts,
     floorAlerts,
+    audit,
+    decisionTelemetry,
     dbPath,
+    auditPath,
     policy,
     nodeCounts,
     nodeTrace,

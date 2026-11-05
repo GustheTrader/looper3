@@ -9,6 +9,8 @@
  *   approval   -> routeDecision -> execute | escalate | reject
  *   vetoWindow -> routeDecision -> execute | escalate | reject
  *   escalate   -> routeDecision -> execute | reject
+ *   (M7) every "execute" / "reject" above goes through `record` first:
+ *   record -> routeRecord -> execute (cleared AND written) | reject
  *
  * `readFloor` is a separate node BEFORE `gate` so that `gate` stays pure: the only I/O in the
  * path (reading agent_flags: global floor + on-call heartbeat) happens in its own node and lands
@@ -52,6 +54,7 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
     .addNode("approval", wrap("approval", nodes.approval))
     .addNode("vetoWindow", wrap("vetoWindow", nodes.vetoWindow))
     .addNode("escalate", wrap("escalate", nodes.escalate))
+    .addNode("record", wrap("record", nodes.record))
     .addNode("execute", wrap("execute", nodes.execute))
     .addNode("reject", wrap("reject", nodes.reject))
     .addEdge(START, "intake")
@@ -60,19 +63,20 @@ export function createGateGraph(deps: GateDeps, hooks: GateGraphHooks = {}) {
     .addEdge("runTriggers", "prepare")
     .addEdge("prepare", "gateNode")
     .addConditionalEdges("gateNode", nodes.routeAfterGate, {
-      execute: "execute",
+      execute: "record",
       vetoWindow: "armDeadline",
       approval: "armDeadline",
-      reject: "reject",
+      reject: "record",
     })
     .addConditionalEdges("armDeadline", nodes.routeAfterDeadline, {
       approval: "approval",
       vetoWindow: "vetoWindow",
-      reject: "reject",
+      reject: "record",
     })
-    .addConditionalEdges("approval", nodes.routeAfterDecision, { execute: "execute", escalate: "escalate", reject: "reject" })
-    .addConditionalEdges("vetoWindow", nodes.routeAfterDecision, { execute: "execute", escalate: "escalate", reject: "reject" })
-    .addConditionalEdges("escalate", nodes.routeAfterDecision, { execute: "execute", escalate: "reject", reject: "reject" })
+    .addConditionalEdges("approval", nodes.routeAfterDecision, { execute: "record", escalate: "escalate", reject: "record" })
+    .addConditionalEdges("vetoWindow", nodes.routeAfterDecision, { execute: "record", escalate: "escalate", reject: "record" })
+    .addConditionalEdges("escalate", nodes.routeAfterDecision, { execute: "record", escalate: "record", reject: "record" })
+    .addConditionalEdges("record", nodes.routeAfterRecord, { execute: "execute", reject: "reject" })
     .addEdge("execute", END)
     .addEdge("reject", END);
 

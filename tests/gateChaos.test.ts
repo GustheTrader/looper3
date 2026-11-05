@@ -95,15 +95,15 @@ describe("NFR-2 chaos: kill the process at every node boundary and resume", () =
 
     const autonomous = harness();
     await autonomous.graph().invoke(autonomous.input(AUTONOMOUS_FIXTURE()), threadConfig("thread_baseline_auto"));
-    expect(autonomous.nodeTrace).toEqual(["intake", "readFloor", "runTriggers", "prepare", "gateNode", "execute"]);
-    expect(autonomous.nodeVisits()).toBe(6);
+    expect(autonomous.nodeTrace).toEqual(["intake", "readFloor", "runTriggers", "prepare", "gateNode", "record", "execute"]);
+    expect(autonomous.nodeVisits()).toBe(7);
   });
 
   it("in_loop flow: one notification, one execution, one decision, no re-ask, no skipped gate", async () => {
     const fixture = IN_LOOP_FIXTURE();
-    // 1..8 covers death before intake, before each intermediate node (incl. M5 runTriggers and
-    // M4 armDeadline), before the interrupt and before execute (visit 8 only happens after resume).
-    for (let crashAt = 1; crashAt <= 8; crashAt += 1) {
+    // 1..10 covers death before every node: intake .. approval (7 visits to the interrupt), then
+    // after the resume the approval re-run (8), M7 record (9) and execute (10).
+    for (let crashAt = 1; crashAt <= 10; crashAt += 1) {
       const target = harness();
       const run = await runWithCrash(target, fixture, crashAt);
       const label = `crash at node visit ${crashAt}`;
@@ -126,7 +126,7 @@ describe("NFR-2 chaos: kill the process at every node boundary and resume", () =
 
   it("autonomous flow: one notification, one execution, no interrupt at any boundary", async () => {
     const fixture = AUTONOMOUS_FIXTURE();
-    for (let crashAt = 1; crashAt <= 7; crashAt += 1) {
+    for (let crashAt = 1; crashAt <= 8; crashAt += 1) {
       const target = harness();
       const run = await runWithCrash(target, fixture, crashAt);
       const label = `crash at node visit ${crashAt}`;
@@ -141,7 +141,7 @@ describe("NFR-2 chaos: kill the process at every node boundary and resume", () =
 
   it("a rejected approval stays rejected across a crash at every boundary", async () => {
     const fixture = IN_LOOP_FIXTURE();
-    for (let crashAt = 1; crashAt <= 8; crashAt += 1) {
+    for (let crashAt = 1; crashAt <= 10; crashAt += 1) {
       const target = harness();
       const run = await runWithCrash(target, fixture, crashAt, { approved: false, by: "jeffg", reason: "no" });
       const label = `crash at node visit ${crashAt}`;

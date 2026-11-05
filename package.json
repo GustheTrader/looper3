@@ -15,7 +15,8 @@
     "bench:gate": "tsx scripts/bench-gate.ts",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "verify": "npm run typecheck && npm run check:tiers && npm run check:gating && npm run test",
-    "check:gating": "tsx scripts/check-harness-gating.ts"
+    "check:gating": "tsx scripts/check-harness-gating.ts",
+    "report:weekly": "tsx scripts/weekly-report.ts"
   },
   "dependencies": {
     "@langchain/langgraph": "^1.5.3",

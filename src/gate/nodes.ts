@@ -30,6 +30,8 @@ import type { AlertOutbox, DeadlineKind, NotificationOutbox, SchedulerStub } fro
 import type { SideEffectLedger } from "./executor.js";
 import { evaluateRunTriggers, type RunSignals, type RunTrigger, type TriggerHit } from "../floors/triggers.js";
 import type { FloorAlertSink } from "../telemetry/floorAlerts.js";
+import type { GateAuditStore } from "../audit/auditStore.js";
+import { decisionRecordFor, toLangSmithDecisionEvent, type DecisionTelemetrySink } from "../audit/decisionRecord.js";
 import type { DecidedBy, GateDecision, GateState, GateStateUpdate, PendingAction } from "./state.js";
 import { GateInputError } from "./state.js";
 import { assertAutonomySlot, autonomySlotFor } from "./router.js";
@@ -57,6 +59,10 @@ export interface GateDeps {
   readonly readRunSignals: (threadId: string) => RunSignals | undefined;
   /** M5: where floor-raise alerts go (LangSmith in M7; in-memory stand-in here). */
   readonly floorAlerts: FloorAlertSink;
+  /** M7 (FR-9): append-only decision audit table. A failed write blocks execution. */
+  readonly audit: GateAuditStore;
+  /** M7 (FR-9): LangSmith-shaped decision tags (in-memory stand-in; LangSmith is a stub). */
+  readonly decisionTelemetry: DecisionTelemetrySink;
 }
 
 export interface ApprovalPrompt {
@@ -75,6 +81,7 @@ export interface VetoPrompt {
 export type GateRoute = "execute" | "vetoWindow" | "approval" | "reject";
 export type DecisionRoute = "execute" | "reject" | "escalate";
 export type DeadlineRoute = "approval" | "vetoWindow" | "reject";
+export type RecordRoute = "execute" | "reject";
 
 // ---------------------------------------------------------------------------------------------
 // Pure gate evaluation
@@ -171,6 +178,13 @@ export function routeAfterDecision(state: GateState): DecisionRoute {
   return state.approved === true ? "execute" : "reject";
 }
 
+/** After the audit record (M7): execute only a cleared action whose decision was written. */
+export function routeAfterRecord(state: GateState): RecordRoute {
+  if (state.auditFailed === true || state.recorded !== true) return "reject";
+  const cleared = state.gate?.mode === "autonomous" || state.approved === true;
+  return cleared ? "execute" : "reject";
+}
+
 /** After armDeadline: only the two interrupting modes get here; anything else fails closed. */
 export function routeAfterDeadline(state: GateState): DeadlineRoute {
   switch (state.gate?.mode) {
@@ -230,6 +244,7 @@ export interface GateNodes {
   readonly gate: (state: GateState) => GateStateUpdate;
   readonly armDeadline: (state: GateState) => GateStateUpdate;
   readonly escalate: (state: GateState) => GateStateUpdate;
+  readonly record: (state: GateState) => GateStateUpdate;
   readonly approval: (state: GateState) => GateStateUpdate;
   readonly vetoWindow: (state: GateState) => GateStateUpdate;
   readonly execute: (state: GateState) => GateStateUpdate;
@@ -237,6 +252,7 @@ export interface GateNodes {
   readonly routeAfterGate: (state: GateState) => GateRoute;
   readonly routeAfterDecision: (state: GateState) => DecisionRoute;
   readonly routeAfterDeadline: (state: GateState) => DeadlineRoute;
+  readonly routeAfterRecord: (state: GateState) => RecordRoute;
 }
 
 export function createGateNodes(deps: GateDeps): GateNodes {
@@ -536,6 +552,34 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     return { escalated: true };
   };
 
+  /**
+   * M7 (FR-9): writes the decision to the append-only audit table and emits its LangSmith-shaped
+   * tags, BEFORE anything executes. Idempotent by idem_key, so a re-run after a crash writes and
+   * emits nothing new. If the write fails, the action does not execute.
+   */
+  const record = (state: GateState): GateStateUpdate => {
+    if (state.recorded === true) return {};
+    const entry = decisionRecordFor(state, deps.now());
+    try {
+      deps.audit.record(entry);
+    } catch (error) {
+      const failed = decisionRecordFor(
+        { ...state, approved: false, rejectReason: "audit write failed (fail closed)" },
+        entry.createdAtMs,
+      );
+      deps.decisionTelemetry.emitOnce(entry.idemKey, toLangSmithDecisionEvent({ ...failed, decision: "rejected" }));
+      return {
+        recorded: false,
+        auditFailed: true,
+        approved: false,
+        executed: false,
+        rejectReason: `audit write failed, not executed (fail closed): ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+    deps.decisionTelemetry.emitOnce(entry.idemKey, toLangSmithDecisionEvent(entry));
+    return { recorded: true };
+  };
+
   /** Terminal reject. Pure: records why, touches nothing else. */
   const reject = (state: GateState): GateStateUpdate => ({
     executed: false,
@@ -553,11 +597,13 @@ export function createGateNodes(deps: GateDeps): GateNodes {
     approval,
     vetoWindow,
     escalate,
+    record,
     execute,
     reject,
     routeAfterGate,
     routeAfterDecision,
     routeAfterDeadline,
+    routeAfterRecord,
   };
 }
 

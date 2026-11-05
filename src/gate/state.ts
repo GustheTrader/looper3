@@ -88,6 +88,10 @@ export const GateStateAnnotation = Annotation.Root({
   timedOut: Annotation<boolean | undefined>,
   /** M4 (FR-4): true once the timeout escalation was handed to the alert outbox. */
   escalated: Annotation<boolean | undefined>,
+  /** M7 (FR-9): true once this action's decision is in the audit table. */
+  recorded: Annotation<boolean | undefined>,
+  /** M7: the audit write failed, so the action must not execute (fail closed). */
+  auditFailed: Annotation<boolean | undefined>,
   /** Clock reading taken once, in `prepare`, so later nodes never need their own. */
   preparedAtMs: Annotation<number | undefined>,
   prepareKey: Annotation<string | undefined>,

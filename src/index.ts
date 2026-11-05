@@ -18,5 +18,8 @@ export * from "./floors/globalMonitor.js";
 export * from "./telemetry/floorAlerts.js";
 export * from "./harness/manifest.js";
 export * from "./harness/toolRunner.js";
+export * from "./audit/decisionRecord.js";
+export * from "./audit/auditStore.js";
+export * from "./audit/weeklyReport.js";
 export * from "./gate/postgresSaver.js";
 export * from "./trading/fakeTradingGraph.js";
