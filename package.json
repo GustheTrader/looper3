@@ -2,7 +2,7 @@
   "name": "looper3",
   "version": "0.1.0",
   "private": true,
-  "description": "Looper3 loop gate - per-action autonomy gate for the six harness types. Phase 1: tool-tier registry + global floor store.",
+  "description": "Looper3 loop gate - per-action autonomy gate for the six harness types.",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -14,7 +14,8 @@
     "check:tiers": "tsx scripts/check-tool-tiers.ts",
     "bench:gate": "tsx scripts/bench-gate.ts",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
-    "verify": "npm run typecheck && npm run check:tiers && npm run test"
+    "verify": "npm run typecheck && npm run check:tiers && npm run check:gating && npm run test",
+    "check:gating": "tsx scripts/check-harness-gating.ts"
   },
   "dependencies": {
     "@langchain/langgraph": "^1.5.3",

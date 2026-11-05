@@ -16,5 +16,7 @@ export * from "./gate/deadlines.js";
 export * from "./floors/triggers.js";
 export * from "./floors/globalMonitor.js";
 export * from "./telemetry/floorAlerts.js";
+export * from "./harness/manifest.js";
+export * from "./harness/toolRunner.js";
 export * from "./gate/postgresSaver.js";
 export * from "./trading/fakeTradingGraph.js";
