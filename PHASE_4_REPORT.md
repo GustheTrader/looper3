@@ -58,7 +58,9 @@ START → intake → readFloor → runTriggers* → prepare → gateNode → ...
   - `floorTriggers` is validated fail closed: unknown keys, non-positive limits, a confidence threshold outside 0..1, a raise "to autonomous", or a day boundary other than UTC are all rejected.
   - `configVersion` 1.1.0 → **1.2.0**.
 
-## 2. Choices the PRD left open (please confirm)
+## 2. Choices the PRD left open
+
+**Confirmed by the owner on 2026-11-05: keep all seven as built, and keep the placeholder thresholds for now.** The numbers in §4 are still placeholders. They're kept on purpose and still have to be set before anything leaves paper mode.
 
 1. **Absent signal vs. malformed signal.** A signal a run doesn't report was not measured, so it doesn't trigger. One that is reported but broken raises to in_loop. Otherwise every run with no metrics would end up in_loop, while a broken meter has to fail closed.
 2. **Limits are "more than", not "at".** At exactly the budget, or exactly on the edge of the drift range, nothing fires.
@@ -108,9 +110,7 @@ One unrelated fix: the report-only "compiled-graph pass" benchmark test hit the 
 
 **New from M5:**
 - **The numbers**: router confidence 0.6; run budget 2M tokens / $25 / 200 turns; data freshness 300 s; daily spend $100 and loss $250; max unresolved orders 0.
-- Raise targets (in_loop vs on_loop per scope).
-- UTC vs desk-local day.
-- §2 items 1, 2 and 5.
+- Kept as placeholders by the owner on 2026-11-05. Raise targets (in_loop), UTC day, and §2 items 1, 2 and 5 are confirmed as built.
 
 **Carried forward:** build-harness tier-1 read; SME `maxAutonomy` placeholders; per-harness veto window (OQ2); approval and alert channel (OQ1); batched approvals (OQ5); NFR-1 scope (gate µs vs graph ~40–70 ms); duplicate submission of a completed `tool_call_id`.
 
