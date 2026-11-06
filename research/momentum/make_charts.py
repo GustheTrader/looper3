@@ -161,3 +161,52 @@ if __name__ == "__main__":
     equity_curves()
     live_ratings()
     print("charts written to", CH)
+
+
+def two_eras():
+    """Lookback plateau in the untouched 1931-1996 era vs the 1996-2026 study era."""
+    new = pd.read_csv(RES / "B1_sector_grid.csv")
+    old = pd.read_csv(RES / "D1_pre1996_sector_grid.csv")
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+    for ax, u, title in [(axes[0], "ind12_m", "French 12 industries"), (axes[1], "ind49_m", "French 49 industries")]:
+        for df, lab, c in [(old, "1931–1996 (never used to pick the window)", S2), (new, "1996–2026 (study period)", S1)]:
+            y = df[(df.universe == u) & (df["mode"] == "long_short")].groupby("L")["score"].mean()
+            ax.plot(y.index, y.values, color=c, lw=2, marker="o", ms=5, label=lab)
+        ax.axvspan(6, 12, color=GRID, alpha=0.5, lw=0, zorder=0)
+        ax.axhline(0, color=INK2, lw=0.8)
+        ax.set_xticks(y.index)
+        ax.set_title(title, fontsize=10)
+        ax.set_xlabel("Lookback window (months)")
+    axes[0].set_ylabel("Average net Sharpe, sector long/short")
+    axes[0].legend(frameon=False, fontsize=8.5, loc="lower center")
+    fig.suptitle("Out-of-sample check: the 6–12 month sector window also wins over the prior 65 years",
+                 x=0.01, ha="left", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(CH / "6_two_eras_plateau.png", dpi=160)
+
+
+def weekly_lookbacks():
+    g = pd.read_csv(RES / "D2_weekly_sector_grid.csv")
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    for u, lab, c in [("ind49_weekly", "French 49 industries (1996–2026)", S2), ("spdr_weekly", "SPDR sector ETFs (2001–2026)", S3)]:
+        y = g[g.universe == u].groupby("L_weeks")["sharpe"].mean()
+        ax.plot(y.index, y.values, color=c, lw=2, marker="o", ms=5, label=lab)
+        ax.annotate(lab.split(" (")[0], (y.index[-1], y.values[-1]), xytext=(6, 0), textcoords="offset points",
+                    va="center", fontsize=8.5, color=INK2)
+    ax.axvspan(39, 52, color=GRID, alpha=0.5, lw=0, zorder=0)
+    ax.axhline(0, color=INK2, lw=0.8)
+    ax.set_xscale("log")
+    ax.set_xticks([1, 2, 4, 8, 13, 26, 39, 52, 78, 104], ["1", "2", "4", "8", "13", "26", "39", "52", "78", "104"])
+    ax.minorticks_off()
+    ax.set_xlim(0.8, 220)
+    ax.set_xlabel("Lookback window (weeks, log scale)")
+    ax.set_ylabel("Average net Sharpe, weekly rebalance")
+    ax.set_title("Weekly rebalancing: short windows lose, the best is again 39–52 weeks (9–12 months)")
+    ax.legend(frameon=False, fontsize=8.5, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(CH / "7_weekly_lookbacks.png", dpi=160)
+
+
+if __name__ == "__main__":
+    two_eras()
+    weekly_lookbacks()

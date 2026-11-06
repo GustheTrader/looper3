@@ -12,6 +12,7 @@ python fetch_data.py        # free data -> data/ (needs the finance hosts allowe
 python study_market.py      # Concept A
 python study_sectors.py     # Concept B + live scan
 python study_selection.py   # which-window-selection-method comparison
+python study_robustness.py  # 1931-1996 out-of-sample + weekly windows
 python make_charts.py       # charts/
 ```
 

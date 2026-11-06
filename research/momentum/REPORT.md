@@ -10,6 +10,8 @@
 |---|---|
 | **Best rolling window for sector ranking** | **9 months**, inside a stable 6–12 month plateau. All three sector universes peak at 9 (chart 1). Windows of 1–3 months and 18–24 months are clearly worse. |
 | **Best rolling window for stock momentum** | **6 months, skipping the latest month (6-1)**, held about 3–6 months. The textbook 12-1 window has *not* worked among large caps since 1996 (chart 2). |
+| **Does it hold on data never used to pick it?** | **Yes.** On 1931–1996, 65 years the study never looked at, sector momentum again peaks at 9–12 months in all four industry tests, and SPSR again beats raw relative strength in all four (section 4b, chart 6). |
+| **Would weekly trading or day/week windows do better?** | **No.** With weekly rebalancing, lookbacks of 1–8 weeks lose money after costs. The best is again 39–52 weeks (9–12 months). Monthly rebalancing is as good or better, and cheaper (chart 7). |
 | **Best way to *choose* the window** | **Don't optimise it every year.** A fixed blend of 6, 9 and 12 months beat walk-forward "pick the best window" in 8 of 9 strategy families. Re-optimising mostly chases noise (chart 3). |
 | **Does a Sector Power Strength Rating beat plain relative strength?** | **Yes.** The composite SPSR (return + risk-adjusted return + consistency) had a higher average Sharpe than raw return ranking in every universe: 0.17 vs 0.07 (12 industries), 0.31 vs 0.22 (49 industries), 0.05 vs −0.02 (ETFs). |
 | **Does sector concentration help stock momentum?** | **Yes.** Buying only winners inside the 3 strongest sectors and shorting only losers inside the 3 weakest beat plain stock momentum in 21 of 24 configurations. 12-1 Sharpe rose from 0.01 to about 0.13, and 6-1 from 0.16 to about 0.20. |
@@ -155,6 +157,34 @@ Lessons:
 
 ---
 
+## 4b. Robustness: unseen history and weekly windows (`study_robustness.py`)
+
+### D1. Out-of-sample era: 1931-01 to 1996-09 (65 years, never used to choose anything)
+The identical sector grid, rerun on CRSP industries before the study period. Average net Sharpe by lookback:
+
+| Lookback (months) | 1 | 2 | 3 | 4 | 6 | 9 | 12 | 15 | 18 | 24 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 12 industries, long/short | 0.13 | 0.06 | 0.07 | 0.07 | 0.10 | 0.24 | **0.27** | 0.15 | 0.05 | −0.03 |
+| 12 industries, long-only (IR) | 0.24 | 0.18 | 0.20 | 0.19 | 0.24 | 0.33 | **0.36** | 0.24 | 0.15 | 0.14 |
+| 49 industries, long/short | 0.14 | 0.13 | 0.15 | 0.15 | 0.21 | 0.31 | **0.36** | 0.29 | 0.25 | 0.16 |
+| 49 industries, long-only (IR) | 0.34 | 0.33 | 0.34 | 0.34 | 0.41 | 0.55 | **0.57** | 0.49 | 0.44 | 0.35 |
+
+* The peak sits at 9–12 months in every case. In 1931–1996 the 12-month window edges out 9, which is the reverse of 1996–2026. **A 9-to-12-month band (or the 6/9/12 blend) is the robust choice**, not a single exact number.
+* SPSR beat raw relative strength in all four tests here too: 0.12 vs 0.10, 0.23 vs 0.22, 0.26 vs 0.17 and 0.44 vs 0.39.
+* SPSR on a 9-month window, top 5 of 49 industries long-only, made 18.0%/yr in 1931–1996 with an information ratio of 0.64. Drawdowns were large (−60%), since the 1930s are included.
+
+### D2. Weekly rebalancing, lookbacks in weeks (1 week to 2 years)
+| Lookback (weeks) | 1 | 2 | 4 | 8 | 13 | 26 | 39 | 52 | 78 | 104 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 49 industries (1996–2026) | −0.34 | −0.26 | −0.11 | −0.07 | 0.07 | 0.23 | 0.33 | **0.34** | 0.20 | 0.12 |
+| SPDR ETFs (2001–2026) | −0.46 | −0.47 | −0.40 | −0.41 | −0.26 | −0.14 | 0.02 | **0.04** | −0.05 | −0.14 |
+
+* Short windows reverse, and costs on weekly turnover make it worse. Holding longer helps: by holding period, the average Sharpe was −0.12 for 1 week, 0.06 for 4 weeks and 0.21 for 13 weeks (49 industries).
+* The best weekly cell (SPSR, 39 weeks, skip 1 week, hold 13 weeks: Sharpe 0.41) is essentially the monthly 9-1 / hold-3 rule. Trading weekly adds turnover, not edge.
+* For the ETFs, weekly long/short is close to zero or negative everywhere. **Use monthly rebalancing.**
+
+---
+
 ## 5. Live market scan (as of 2026-10-31)
 
 Produced by `study_sectors.py` → `results/B3_live_scan.json`, chart 5.
@@ -209,7 +239,7 @@ Produced by `study_sectors.py` → `results/B3_live_scan.json`, chart 5.
 2. **Multiple testing.** Hundreds of configurations were run. The Deflated Sharpe probabilities of the best single cells were 0.18 (stocks) and 0.35–0.79 (sectors), mostly below the 0.95 bar. Trust the **plateau** (6–12 months) and the **method comparison**, not any one cell.
 3. **French industries are not directly tradable.** They are value-weighted CRSP portfolios. The SPDR ETFs are the tradable check, and they confirm the 9-month peak, though with weaker numbers.
 4. **Costs and frictions are simplified.** Flat bps per unit of turnover, with no short-borrow fees, taxes or market impact. Short lookbacks (1–3 months) turn over the most and would suffer most from realistic costs.
-5. **Monthly granularity.** Signals and rebalances happen at month-end. Daily or weekly windows were not tested.
+5. **Granularity.** The main study is monthly. A weekly check (section 4b) found no benefit from faster trading; intraday was not tested.
 6. **Volatility targeting uses leverage up to 2×** in calm periods. That needs margin and is not available in all accounts.
 
 ---
@@ -237,5 +267,6 @@ Produced by `study_sectors.py` → `results/B3_live_scan.json`, chart 5.
 | `study_market.py` | Concept A (A1–A3) → `results/A*` |
 | `study_sectors.py` | Concept B (B1–B3, live scan) → `results/B*` |
 | `study_selection.py` | Window-selection head-to-head → `results/C*` |
+| `study_robustness.py` | 1931–1996 out-of-sample rerun + weekly windows → `results/D*` |
 | `make_charts.py` | Charts → `charts/` |
 | `results/*.csv/json` | Every grid cell and every return series, for your own analysis |
