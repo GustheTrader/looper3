@@ -11,6 +11,7 @@ python study_leaps.py              # LEAPS / covered-call / PMCC on SPY and mome
 python study_vix.py                # VIX spike sleeves, daily
 python study_allocation.py         # capital allocation grid
 python make_charts.py
+python build_page.py              # interactive paper.html from results/
 ```
 
 Finance hosts must be reachable (the `looper3` cloud environment allows them).
