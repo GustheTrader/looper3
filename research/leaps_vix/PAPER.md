@@ -31,6 +31,10 @@ Main results:
   - *Balanced:* adds **+2.2%/yr** over SPY (12.9%) with a smaller drawdown (−40%).
   - *Aggressive:* earns **14.7%/yr** with SPY-like drawdown (−48%).
 - **Paying for VIX-call tail hedges made every allocation worse.**
+- **The long/short momentum sleeve with a 50-day moving-average tilt** (§5.5) adds little on its own since 1996.
+  - With 10 stocks per side, a fair test (only stocks already in the S&P 500 at each date) loses money in every version. A biased test using today's index members makes the same rule look like +10%/yr.
+  - On survivorship-free CRSP portfolios, tilting toward longs above the 50-day average was a huge edge before 1996 (Sharpe 0.39 → 0.84). Since 1996 it's small (0.20 → 0.27).
+  - Inside the mix, a **20% market-neutral momentum sleeve** improved all three portfolios (Balanced: Sharpe 0.80 → 0.89, max drawdown −40% → −37%). The tilted version helped only with a 1% band.
 
 ---
 
@@ -216,13 +220,103 @@ The standard practice is **half-Kelly or less**, with a **drawdown budget** on t
 
 ---
 
+### 5.5 Long/short momentum sleeve with a 50-day moving-average tilt
+
+**The rule.** Each month end, long 10 and short 10 stocks by 6-1 momentum: the 6-month return, skipping the latest month. In the *concentrated* version, longs come only from the 3 strongest GICS sectors and shorts from the 3 weakest, rated by 9-month SPSR. Every day, compare SPY's close with its 50-day simple moving average, and set the next day's leg weights:
+
+| Tilt | SPY above its 50-day average | SPY below it |
+|---|---|---|
+| neutral | 100% long / 100% short | 100 / 100 |
+| tilt130 | 130 / 70 | 70 / 130 |
+| **tilt150 (requested)** | **150 / 50** | **50 / 150** |
+| flip | 100 / 0 | 0 / 100 |
+
+Each tilt was also run with a **1% band**: the regime only changes once SPY is more than 1% beyond its average. That cuts regime switches from 18 to 7 a year.
+
+Costs:
+- 10 bps per unit of stock turnover.
+- 0.5%/yr borrow fee on shorts.
+- T-bill interest only on idle cash, with nothing credited on short-sale proceeds.
+
+**Test 1: 10/10 stocks, S&P 500 (1996-10 → 2026-10).** Free data only lists *today's* members.
+
+| Version | CAGR | Vol | Sharpe | Max DD |
+|---|---|---|---|---|
+| **Biased: today's members at every date (look-ahead)** | | | | |
+| ↳ long-only top 10 | 48.6% | 34% | 1.26 | −66% |
+| ↳ tilt150 | +10.4% | 53% | 0.41 | −98% |
+| **Fairer: only stocks already in the index on each date** | | | | |
+| ↳ neutral | −6.3% | 36% | −0.07 | −98% |
+| ↳ tilt150 | −9.0% | 47% | −0.01 | −99% |
+| ↳ tilt150, 1% band | −7.4% | 47% | 0.03 | −99% |
+| ↳ flip, 1% band (best) | −1.9% | 34% | 0.05 | −87% |
+| ↳ concentrated tilt150 | −16.3% | 48% | −0.18 | −100% |
+| SPY ±1 by its 50-day average (timing only) | −2.3% | 19% | −0.14 | −72% |
+| SPY buy & hold | 10.2% | 19% | 0.48 | −55% |
+
+The biased version picks companies that became index members *because* they soared (Carvana, AppLovin, Bloom Energy and others), so it effectively knows the future. The fairer version still leaves out companies that were later dropped or went bust. That removes failed shorts, but also failed longs, so even it is not a clean test. **With only 10 names per side, volatility is 34–48% and drawdowns approach −100% either way.**
+
+**Test 2: survivorship-free CRSP momentum deciles (Ken French, daily).** Long the top 10% by 12-2 momentum, short the bottom 10%, with every NYSE/AMEX/NASDAQ stock included and dead companies kept. The regime comes from the whole market's 50-day average. Costs also include about 35% monthly turnover inside each decile.
+
+| Version | 1927–1996 CAGR | Sharpe | 1996–2026 CAGR | Sharpe | Max DD (1996–2026) |
+|---|---|---|---|---|---|
+| neutral | 9.5% | 0.39 | 3.6% | 0.20 | −84% |
+| tilt130 | 19.8% | 0.76 | 4.7% | 0.25 | −92% |
+| **tilt150** | **26.1%** | **0.84** | **3.8%** | **0.26** | −96% |
+| tilt150, 1% band | 22.1% | 0.73 | 4.4% | 0.27 | −92% |
+| flip | 22.0% | 0.83 | 4.2% | 0.22 | −87% |
+| flip, 1% band | 18.1% | 0.69 | 4.9% | 0.24 | −77% |
+| Market ±1 by its 50-day average | 15.1% | 0.75 | 0.4% | 0.00 | −62% |
+| Market buy & hold | 9.5% | 0.43 | 10.4% | 0.49 | −55% |
+
+Moving-average length (tilt150, Sharpe):
+
+| Average length | 20 days | **50 days** | 100 days | 200 days |
+|---|---|---|---|---|
+| 1927–1996 | 0.93 | 0.84 | 0.74 | 0.62 |
+| 1996–2026 | 0.23 | 0.26 | 0.26 | 0.22 |
+
+**What this means:**
+* **The idea is real but has faded.** For 70 years, overweighting momentum winners in uptrends and losers in downtrends roughly doubled the Sharpe of momentum. Since 1996 the edge is about +0.06 Sharpe. The underlying cause is that simple 50-day trend timing of the market stopped working after the mid-1990s (Sharpe 0.75 → 0.00).
+* **50 days is a sensible length.** 50–100 days is the best range in the recent era, and shorter averages won earlier.
+* **The 1% band helps.** It cuts whipsaw trades by 60% and slightly improves the recent-era results.
+* **Ten stocks per side is too few.** Concentration multiplies single-stock risk without adding return.
+
+**Adding the sleeve to the mix (2007-04 → 2026-09).** The sleeve uses the honest CRSP version, funded from the mix's T-bill cash at 20% of the account.
+
+| Mix | Sleeve | CAGR | Sharpe | Max DD | 2008 | 2022 |
+|---|---|---|---|---|---|---|
+| Conservative | none | 10.2% | 0.83 | −25.4% | −15.2% | −9.9% |
+| Conservative | **neutral momentum** | **10.9%** | **0.91** | **−22.2%** | −11.9% | −5.7% |
+| Conservative | tilt150, 1% band | 10.9% | 0.85 | −24.8% | −10.3% | −11.5% |
+| Balanced | none | 13.1% | 0.80 | −39.7% | −21.6% | −15.2% |
+| Balanced | **neutral momentum** | **14.0%** | **0.89** | **−36.9%** | −18.4% | −11.0% |
+| Balanced | tilt150 | 13.2% | 0.81 | −40.0% | −20.2% | −16.8% |
+| Balanced | tilt150, 1% band | 13.9% | 0.86 | −37.5% | −16.7% | −16.5% |
+| Balanced | flip, 1% band | 13.7% | 0.84 | −35.4% | −16.0% | −17.7% |
+| Aggressive | none | 15.0% | 0.79 | −48.1% | −28.8% | −19.2% |
+| Aggressive | **neutral momentum** | **15.9%** | **0.87** | **−44.7%** | −25.8% | −15.2% |
+| Aggressive | tilt150, 1% band | 15.9% | 0.85 | −43.9% | −24.2% | −20.3% |
+
+The mix is already long the market through the LEAPS core. So the **market-neutral** momentum sleeve is the better diversifier: it adds return and lowers drawdown in all three mixes. The 150/50 tilt adds more market exposure on top of a portfolio that already has plenty. Without the band it added nothing, and with the band it roughly matched the neutral sleeve. The tilt only paid in 2008, when shorts were overweight in the downtrend.
+
+**Live state (2026-11-06):**
+- SPY closed at 737.74, below its 50-day average of 765.73, so the tilt is **down**: overweight shorts.
+- Current plain baskets: long CRL, CRWD, DELL, HPE, ILMN, MRNA, OKTA, PANW, RVTY, VEEV; short ALB, APP, CIEN, COHR, FIX, LII, NFLX, NRG, RDDT, ROL.
+
+These lists come from the stock-level test that §5.5 shows lost money. Treat them as a scan, not a trade list.
+
+---
+
 ## 6. Recommended playbook
 
 **Account structure (Balanced):**
 ```
  ~29%  SPY LEAPS, 0.80 delta, 1.5-2 yr, sized to 1.0x account delta
  ~20%  spike-fade sleeve capital (idle in T-bills until the signal fires)
- ~51%  T-bills / money market (collateral, dry powder for the boost)
+ ~20%  market-neutral momentum sleeve (long top / short bottom momentum, broad
+       baskets, not 10 names; optional 150/50 tilt by SPY's 50-day average with a 1% band)
+ ~31%  T-bills / money market (collateral, dry powder for the boost)
   +    sell 1 x 1-month 0.25-delta SPY call per LEAPS, every month
   +    momentum sector tilt: hold the top-2 SPSR sectors in SHARES (no calls),
        funded from the T-bill bucket if you want the tilt (not tested together here)
@@ -234,7 +328,8 @@ The standard practice is **half-Kelly or less**, with a **drawdown budget** on t
 3. **Check the spike-fade signal** daily (or use the month-end state): VIX ≥ 25, VIX < VIX3M, and VIX ≥ 15% below its 10-day high.
    - If it's **on:** short VIX futures exposure at 0.5× sleeve capital (e.g. SVXY), and raise LEAPS exposure to λ + 0.5 for one month.
    - **Exit** when VIX < 18, after 40 days, or the moment VIX ≥ VIX3M again.
-4. **Never** hold long VIX futures/ETPs as a standing position, and **don't** run a monthly VIX-call budget.
+4. **Momentum sleeve:** re-form the long/short baskets monthly. If you use the 50-day tilt, check SPY's close against its 50-day average daily, and only switch once SPY is more than 1% past it.
+5. **Never** hold long VIX futures/ETPs as a standing position, and **don't** run a monthly VIX-call budget.
 
 ---
 
@@ -243,6 +338,7 @@ The standard practice is **half-Kelly or less**, with a **drawdown budget** on t
 2. **On momentum sectors:** no. Hold the momentum tilt in shares, and keep LEAPS and calls on the index.
 3. **VIX spikes:** fade them after the peak (Sharpe 0.6, confirmed on SVXY). Don't chase them, and don't pay for standing VIX-call insurance.
 4. **Allocation:** spend the capital LEAPS free up on the spike-fade sleeve, add the post-spike boost, and set λ from your drawdown budget (0.75 / 1.0 / 1.25). This beat SPY on return-to-drawdown in all three versions.
+5. **Long/short momentum with the 50-day tilt:** a broad, market-neutral momentum sleeve at 20% improves every mix. The 150/50 tilt was a large edge before 1996 but is small now. If used, apply it with a 1% band, and hold broad baskets, not 10 stocks a side.
 
 ---
 
@@ -255,6 +351,7 @@ The standard practice is **half-Kelly or less**, with a **drawdown budget** on t
 6. **Leverage.** λ > 1 needs options approval and, for the short-VIX sleeve, margin. Margin calls in a crash can force selling at the worst moment.
 7. **Taxes.** Options and VIX ETPs often produce short-term gains. Not modelled.
 8. **Combining with momentum.** The share-based momentum tilt and the LEAPS core were tested separately, not together.
+9. **Stock-level long/short data.** Free data has no list of past S&P 500 members or delisted stocks, so the 10/10 stock test is biased in ways that can't be fully corrected. The survivorship-free CRSP test uses broad value-weighted deciles, not 10 names. A clean 10/10 test needs point-in-time constituents and delisting returns (CRSP, Norgate or Sharadar).
 
 ---
 
@@ -272,4 +369,4 @@ The standard practice is **half-Kelly or less**, with a **drawdown budget** on t
 ---
 
 ## 10. Reproduce
-See `README.md`. Pipeline: `fetch_data.py` → `calibrate.py` → `study_leaps.py` → `study_vix.py` → `study_allocation.py` → `make_charts.py`. Every return series and grid cell is in `results/`.
+See `README.md`. Pipeline: `fetch_data.py` → `calibrate.py` → `study_leaps.py` → `study_vix.py` → `study_allocation.py` → `study_ls_ma.py` → `make_charts.py` → `build_page.py`. Every return series and grid cell is in `results/`.

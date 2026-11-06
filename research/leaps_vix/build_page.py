@@ -63,6 +63,13 @@ def main():
     d["mixes"] = pack(gr)
     d["mixes_dd"] = pack(gr / gr.cummax() - 1)
 
+    fr = pd.read_csv(RES / "LS_french_results.csv")
+    order = [("french_neutral", "No tilt"), ("french_tilt130", "130/70"), ("french_tilt150", "150/50"),
+             ("french_tilt150_band1", "150/50 + 1% band"), ("french_flip", "Flip 100/0"),
+             ("french_flip_band1", "Flip + 1% band"), ("market_ma50_long_short", "Market timing only")]
+    d["ls_eras"] = {"labels": [lab for _, lab in order],
+                    "series": {era: [round(float(fr[(fr.period == era) & (fr.key == k)].sharpe.iloc[0]), 3) for k, _ in order]
+                               for era in ["1927-1996", "1996-2026"]}}
     html = (HERE / "page_template.html").read_text().replace("/*__DATA__*/{}", json.dumps(d, separators=(",", ":")))
     out = HERE / "paper.html"
     out.write_text(html)

@@ -112,12 +112,13 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </header>
 
   <section>
-    <h2>The four answers</h2>
+    <h2>The five answers</h2>
     <div class="answers">
       <div><span class="q">LEAPS vs shares on SPY</span><span class="a">Same return for 28% of the capital</span><span class="d">Selling calls above the LEAPS cut volatility and drawdown (−40% vs −51%). The premium is mostly paid back in rallies, so it lowers risk rather than adding return.</span></div>
       <div><span class="q">LEAPS on momentum sectors</span><span class="a">No. Hold sectors as shares</span><span class="d">Rolling LEAPS 4–5 times a year costs 3.8%/yr in spreads, and calls sold on rising sectors paid out about 3%/yr more than they collected.</span></div>
       <div><span class="q">Trading VIX spikes</span><span class="a">Fade the spike after it peaks</span><span class="d">+7.5%/yr at a Sharpe of 0.61 (real SVXY check: +7.7%). Buying volatility after it spikes lost money.</span></div>
       <div><span class="q">Splitting the account</span><span class="a">Fund the fade sleeve with freed-up cash</span><span class="d">Balanced mix: 12.9%/yr vs SPY's 10.7%, with a −40% drawdown vs −51%. Standing VIX-call insurance hurt every mix.</span></div>
+      <div><span class="q">Long/short with a 50-day tilt</span><span class="a">Keep the sleeve neutral, with broad baskets</span><span class="d">The 150/50 tilt was a big edge before 1996 and is small since. A 20% market-neutral momentum sleeve improved every mix (Balanced Sharpe 0.80 → 0.89).</span></div>
     </div>
   </section>
 
@@ -263,12 +264,60 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </section>
 
   <section>
-    <h2>5. The playbook</h2>
+    <h2>5. Long/short momentum with a 50-day tilt</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>Each month end, go long the 10 strongest and short the 10 weakest stocks by 6-1 momentum (the 6-month return, skipping the latest month). Every day, check SPY's close against its 50-day moving average and set the next day's weights. With the requested <strong>150/50 tilt</strong>, the long side gets 150% and the short side 50% while SPY is above its average, and the reverse while it's below. We also tested 130/70, a full flip (100/0), and a 1% band that waits until SPY is 1% past its average before switching. The band cuts switches from 18 to 7 a year.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>10 long / 10 short, S&amp;P 500 stocks, 1996–2026</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>Biased test (today's index members at every date): 150/50 tilt</td><td class="pos">+10.4%</td><td>53%</td><td>0.41</td><td>−98%</td></tr>
+        <tr><td>Fairer test (only stocks already in the index on each date): no tilt</td><td class="neg">−6.3%</td><td>36%</td><td>−0.07</td><td>−98%</td></tr>
+        <tr><td>Fairer test: 150/50 tilt</td><td class="neg">−9.0%</td><td>47%</td><td>−0.01</td><td>−99%</td></tr>
+        <tr><td>Fairer test: flip with 1% band (best version)</td><td class="neg">−1.9%</td><td>34%</td><td>0.05</td><td>−87%</td></tr>
+        <tr><td>SPY long/short by its 50-day average (timing only)</td><td class="neg">−2.3%</td><td>19%</td><td>−0.14</td><td>−72%</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>10.2%</td><td>19%</td><td>0.48</td><td>−55%</td></tr>
+      </tbody>
+      <caption>Free data only lists today's S&amp;P 500 members. The biased test picks companies that joined the index because they soared, so it effectively knows the future.</caption>
+    </table></div>
+    <div class="prose"><p>To test the tilt idea fairly, we reran it on Ken French's daily momentum portfolios. They include every US stock, including companies that later failed, going back to 1926. Each side holds hundreds of stocks (the top or bottom 10% by 12-2 momentum) instead of 10.</p></div>
+    <figure>
+      <div class="fig"><h3>Sharpe ratio of each tilt, before and after 1996</h3><div class="chart tall"><canvas id="c_ls" aria-label="Bar chart of Sharpe ratio by tilt version for 1927-1996 and 1996-2026"></canvas></div></div>
+      <figcaption>Before 1996, tilting toward the winners in uptrends roughly doubled momentum's Sharpe. Since then, the market's 50-day trend has stopped predicting anything (the market-timing bar fell from 0.75 to 0.00), so the tilt adds little.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Adding a 20% momentum sleeve to the mixes, 2007–2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>2008</th><th>2022</th></tr></thead>
+      <tbody>
+        <tr><td>Balanced, no sleeve</td><td>13.1%</td><td>0.80</td><td>−39.7%</td><td>−21.6%</td><td>−15.2%</td></tr>
+        <tr class="hl"><td>Balanced + market-neutral momentum</td><td>14.0%</td><td>0.89</td><td>−36.9%</td><td>−18.4%</td><td>−11.0%</td></tr>
+        <tr><td>Balanced + 150/50 tilt</td><td>13.2%</td><td>0.81</td><td>−40.0%</td><td>−20.2%</td><td>−16.8%</td></tr>
+        <tr><td>Balanced + 150/50 tilt with 1% band</td><td>13.9%</td><td>0.86</td><td>−37.5%</td><td>−16.7%</td><td>−16.5%</td></tr>
+        <tr><td>Conservative, no sleeve</td><td>10.2%</td><td>0.83</td><td>−25.4%</td><td>−15.2%</td><td>−9.9%</td></tr>
+        <tr class="hl"><td>Conservative + market-neutral momentum</td><td>10.9%</td><td>0.91</td><td>−22.2%</td><td>−11.9%</td><td>−5.7%</td></tr>
+        <tr><td>Aggressive, no sleeve</td><td>15.0%</td><td>0.79</td><td>−48.1%</td><td>−28.8%</td><td>−19.2%</td></tr>
+        <tr class="hl"><td>Aggressive + market-neutral momentum</td><td>15.9%</td><td>0.87</td><td>−44.7%</td><td>−25.8%</td><td>−15.2%</td></tr>
+      </tbody>
+      <caption>Survivorship-free CRSP version of the sleeve, funded from the mix's T-bill cash. Period ends September 2026, when the French data ends.</caption>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <ul class="tight">
+        <li><strong>Neutral beats tilted inside the mix.</strong> The LEAPS core already owns the market. A market-neutral momentum sleeve diversifies it, while the 150/50 tilt adds even more market exposure.</li>
+        <li><strong>If you use the tilt, add the 1% band.</strong> It cuts whipsaw trades by 60% and was the only tilted version that helped the mix.</li>
+        <li><strong>50 days is a reasonable length.</strong> 50–100 days did best since 1996 (Sharpe 0.26), ahead of 20 days (0.23) and 200 days (0.22).</li>
+        <li><strong>Ten stocks per side is too few.</strong> Volatility ran 34–48% with drawdowns near −100%. Hold broad baskets, such as 50+ names per side or long/short ETFs.</li>
+        <li><strong>Today (2026-11-06):</strong> SPY closed at 737.74, below its 50-day average of 765.73, so the tilt would overweight shorts.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. The playbook</h2>
     <h3>Balanced account at a glance</h3>
     <div class="alloc">
       <div><span class="pct">~29%</span><span class="what">SPY LEAPS, 0.80 delta, 1.5–2 years, sized to 1.0× account exposure</span></div>
       <div><span class="pct">~20%</span><span class="what">Spike-fade sleeve, held in T-bills until the signal fires</span></div>
-      <div><span class="pct">~51%</span><span class="what">T-bills or money market: collateral and cash for the boost</span></div>
+      <div><span class="pct">~20%</span><span class="what">Market-neutral momentum sleeve, broad baskets (optional 150/50 tilt with a 1% band)</span></div>
+      <div><span class="pct">~31%</span><span class="what">T-bills or money market: collateral and cash for the boost</span></div>
       <div><span class="pct">1 call</span><span class="what">per LEAPS each month: 1-month, 0.25 delta on SPY</span></div>
     </div>
     <h3>Monthly checklist (last trading day)</h3>
@@ -277,12 +326,13 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
       <li><span><strong>Sell next month's 0.25-delta SPY call</strong>, including during spikes. Close or roll any call that is in the money.</span></li>
       <li><span><strong>Check the spike-fade signal:</strong> VIX ≥ 25, VIX below VIX3M, and VIX ≥ 15% under its 10-day high. If it's on, short VIX futures at 0.5× the sleeve (e.g. SVXY) and raise LEAPS exposure by 0.5× for one month. Exit when VIX is below 18, after 40 days, or the moment VIX ≥ VIX3M again.</span></li>
       <li><span><strong>Keep the momentum tilt in shares.</strong> Hold the top-2 rated sectors as ETFs, and don't sell calls on them.</span></li>
+      <li><span><strong>Re-form the momentum sleeve</strong> each month: long the strongest names, short the weakest. If you use the tilt, check SPY against its 50-day average daily, and switch only once it's more than 1% past it.</span></li>
       <li><span><strong>Don't</strong> hold long VIX funds as a standing position, and don't pay a monthly VIX-call budget.</span></li>
     </ol>
   </section>
 
   <section>
-    <h2>6. Limitations and risks</h2>
+    <h2>7. Limitations and risks</h2>
     <ul class="tight prose">
       <li><strong>Modelled option prices.</strong> The model matches ^PUT and VIXY on average, but single months can differ (monthly correlation with ^PUT is 0.86). Real fills and changes in skew will vary.</li>
       <li><strong>Early assignment.</strong> Short calls that are in the money can be assigned early, especially before ex-dividend dates. The LEAPS then have to be exercised or sold. The monthly model ignores this.</li>
@@ -291,6 +341,7 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
       <li><strong>Short sample, picked after the fact.</strong> The VIX sleeves cover 2007–2026, which includes one financial crisis and one pandemic crash. The allocation mixes were chosen from in-sample results. The sleeve rules themselves were set from the research literature before testing.</li>
       <li><strong>Leverage and taxes.</strong> Exposure above 1.0× and short-VIX positions need margin and options approval. Taxes are not modelled.</li>
       <li><strong>Not tested together:</strong> the share-based momentum tilt and the LEAPS core were tested separately, not combined.</li>
+      <li><strong>Stock-level long/short data:</strong> free data has no history of past index members or failed companies, so the 10/10 stock test can't be made fully fair. A clean test needs point-in-time data (CRSP, Norgate or Sharadar).</li>
     </ul>
   </section>
 
@@ -410,6 +461,22 @@ function render() {
     label: c => ` CAGR ${pct(c.raw.y)} · max DD −${pct(c.raw.x, 0)} · Sharpe ${c.raw.p.sharpe.toFixed(2)}`,
   };
   charts.push(new Chart(document.getElementById("c_frontier"), { type: "scatter", data: { datasets: sets }, options: of }));
+
+  // Sharpe by tilt and era (grouped bars)
+  const le = DATA.ls_eras;
+  const ol = base({ indexAxis: "y", interaction: { mode: "index", intersect: false, axis: "y" } });
+  const ink2 = css("--ink-2"), gridc = css("--grid");
+  ol.scales = {
+    x: { min: 0, ticks: { color: ink2, callback: v => v.toFixed(1) }, grid: { color: gridc }, border: { display: false },
+         title: { display: true, text: "Sharpe ratio (net)", color: ink2 } },
+    y: { ticks: { color: ink2, autoSkip: false }, grid: { display: false }, border: { color: gridc } },
+  };
+  ol.plugins.legend.labels = { ...ol.plugins.legend.labels, boxWidth: 12, boxHeight: 12 };
+  ol.plugins.tooltip.callbacks = { label: c => ` ${c.dataset.label}: Sharpe ${c.raw.toFixed(2)}` };
+  charts.push(new Chart(document.getElementById("c_ls"), { type: "bar", options: ol, data: { labels: le.labels, datasets: [
+    { label: "1927–1996", data: le.series["1927-1996"], backgroundColor: S[1], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
+    { label: "1996–2026", data: le.series["1996-2026"], backgroundColor: S[0], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
+  ] } }));
 
   charts.push(lineChart("c_mixes", DATA.mixes, [S[1], S[2], S[0], S[3]]));
   const dd = lineChart("c_dd", DATA.mixes_dd, [S[1], S[2], S[0], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });

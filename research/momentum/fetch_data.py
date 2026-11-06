@@ -37,6 +37,7 @@ FRENCH_FILES = {
     "mom10_m": "10_Portfolios_Prior_12_2_CSV.zip",
     "rev10_m": "10_Portfolios_Prior_1_0_CSV.zip",     # short-term (1-month) sort
     "ltr10_m": "10_Portfolios_Prior_60_13_CSV.zip",   # long-term (5-year) sort
+    "mom10_d": "10_Portfolios_Prior_12_2_Daily_CSV.zip",  # daily momentum deciles
     "ind49_m": "49_Industry_Portfolios_CSV.zip",
     "ind12_m": "12_Industry_Portfolios_CSV.zip",
     "ind49_d": "49_Industry_Portfolios_daily_CSV.zip",

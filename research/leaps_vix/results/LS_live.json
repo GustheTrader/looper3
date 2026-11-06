@@ -1,0 +1,60 @@
+{
+ "plain": {
+  "formed": "2026-11-06",
+  "long": [
+   "CRL",
+   "CRWD",
+   "DELL",
+   "HPE",
+   "ILMN",
+   "MRNA",
+   "OKTA",
+   "PANW",
+   "RVTY",
+   "VEEV"
+  ],
+  "short": [
+   "ALB",
+   "APP",
+   "CIEN",
+   "COHR",
+   "FIX",
+   "LII",
+   "NFLX",
+   "NRG",
+   "RDDT",
+   "ROL"
+  ]
+ },
+ "concentrated": {
+  "formed": "2026-11-06",
+  "long": [
+   "CRL",
+   "CRWD",
+   "DELL",
+   "HPE",
+   "ILMN",
+   "MRNA",
+   "OKTA",
+   "PANW",
+   "RVTY",
+   "VEEV"
+  ],
+  "short": [
+   "APP",
+   "CHRW",
+   "CHTR",
+   "FIX",
+   "LII",
+   "LVS",
+   "NFLX",
+   "RDDT",
+   "ROL",
+   "WYNN"
+  ]
+ },
+ "spy_close": 737.74,
+ "spy_ma50": 765.73,
+ "regime": "down (overweight shorts)",
+ "as_of": "2026-11-06"
+}
