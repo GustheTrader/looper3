@@ -1,0 +1,355 @@
+{
+  "ind12_m": {
+    "market_buy_hold": {
+      "start": "1996-10",
+      "end": "2026-09",
+      "months": 360,
+      "cagr": 0.10360691483824369,
+      "ann_ret": 0.11161999999999989,
+      "ann_vol": 0.1582739283682382,
+      "sharpe": 0.564214291496388,
+      "t_stat": 3.09032894719367,
+      "max_dd": -0.5031170717166413,
+      "worst_month": -0.1712,
+      "hit_rate": 0.6388888888888888,
+      "skew": -0.5601300543765623
+    },
+    "long_short": {
+      "best_cell": "SPSR_L9_S1_H3_k1_long_short",
+      "best_score": 0.39828691393974686,
+      "best_ann_ret": 0.0884811111111111,
+      "best_max_dd": -0.5620800210099542,
+      "deflated_sharpe_prob": 0.425516611905309,
+      "n_configs": 360,
+      "mean_score_by_lookback": {
+        "1": -0.006,
+        "2": 0.057,
+        "3": 0.1,
+        "4": 0.149,
+        "6": 0.184,
+        "9": 0.273,
+        "12": 0.228,
+        "15": 0.123,
+        "18": 0.059,
+        "24": 0.02
+      },
+      "mean_score_by_signal": {
+        "RS": 0.066,
+        "SPSR": 0.171
+      },
+      "mean_score_by_skip": {
+        "0": 0.126,
+        "1": 0.112
+      },
+      "half_rank_stability_spearman": 0.41267396610570556,
+      "walk_forward_oos": {
+        "start": "2001-10",
+        "end": "2026-09",
+        "months": 300,
+        "cagr": -0.0033510958670575075,
+        "ann_ret": 0.01700611111111109,
+        "ann_vol": 0.1970772412796165,
+        "sharpe": 0.08629160323480747,
+        "t_stat": 0.4314580161740374,
+        "max_dd": -0.6837303111585202,
+        "worst_month": -0.319,
+        "hit_rate": 0.53,
+        "skew": -1.0043209108966562
+      },
+      "walk_forward_top_picks": {
+        "SPSR_L1_S1_H6_k1_long_short": 48,
+        "SPSR_L9_S0_H1_k1_long_short": 36,
+        "SPSR_L9_S0_H6_k2_long_short": 24,
+        "SPSR_L9_S1_H3_k1_long_short": 24,
+        "SPSR_L9_S0_H6_k1_long_short": 12
+      }
+    },
+    "long_only": {
+      "best_cell": "RS_L9_S1_H6_k1_long_only",
+      "best_score": 0.4628679912209149,
+      "best_ann_ret": 0.17783499999999997,
+      "best_max_dd": -0.4677814348567405,
+      "deflated_sharpe_prob": 0.46976420288163406,
+      "n_configs": 360,
+      "mean_score_by_lookback": {
+        "1": -0.009,
+        "2": 0.12,
+        "3": 0.143,
+        "4": 0.187,
+        "6": 0.255,
+        "9": 0.327,
+        "12": 0.299,
+        "15": 0.189,
+        "18": 0.068,
+        "24": -0.006
+      },
+      "mean_score_by_signal": {
+        "RS": 0.125,
+        "SPSR": 0.19
+      },
+      "mean_score_by_skip": {
+        "0": 0.156,
+        "1": 0.159
+      },
+      "half_rank_stability_spearman": 0.3086639042996731,
+      "walk_forward_oos": {
+        "start": "2001-10",
+        "end": "2026-09",
+        "months": 300,
+        "cagr": 0.02016063882172614,
+        "ann_ret": 0.03021822222222224,
+        "ann_vol": 0.14487397743992034,
+        "sharpe": 0.20858281629462283,
+        "t_stat": 1.0429140814731144,
+        "max_dd": -0.4321328136193202,
+        "worst_month": -0.1932999999999999,
+        "hit_rate": 0.48333333333333334,
+        "skew": 0.9401329928290769
+      },
+      "walk_forward_top_picks": {
+        "RS_L6_S1_H6_k1_long_only": 48,
+        "RS_L9_S0_H6_k2_long_only": 36,
+        "RS_L12_S0_H1_k1_long_only": 36,
+        "RS_L9_S1_H6_k2_long_only": 24,
+        "RS_L6_S1_H3_k1_long_only": 24
+      }
+    }
+  },
+  "ind49_m": {
+    "market_buy_hold": {
+      "start": "1996-10",
+      "end": "2026-09",
+      "months": 360,
+      "cagr": 0.10360691483824369,
+      "ann_ret": 0.11161999999999989,
+      "ann_vol": 0.1582739283682382,
+      "sharpe": 0.564214291496388,
+      "t_stat": 3.09032894719367,
+      "max_dd": -0.5031170717166413,
+      "worst_month": -0.1712,
+      "hit_rate": 0.6388888888888888,
+      "skew": -0.5601300543765623
+    },
+    "long_short": {
+      "best_cell": "SPSR_L1_S0_H6_k3_long_short",
+      "best_score": 0.48353449596393017,
+      "best_ann_ret": 0.08398092592592589,
+      "best_max_dd": -0.5264644364954001,
+      "deflated_sharpe_prob": 0.7857694689415391,
+      "n_configs": 360,
+      "mean_score_by_lookback": {
+        "1": 0.218,
+        "2": 0.262,
+        "3": 0.254,
+        "4": 0.301,
+        "6": 0.34,
+        "9": 0.35,
+        "12": 0.317,
+        "15": 0.245,
+        "18": 0.195,
+        "24": 0.139
+      },
+      "mean_score_by_signal": {
+        "RS": 0.215,
+        "SPSR": 0.309
+      },
+      "mean_score_by_skip": {
+        "0": 0.274,
+        "1": 0.251
+      },
+      "half_rank_stability_spearman": 0.5321728305516761,
+      "walk_forward_oos": {
+        "start": "2001-10",
+        "end": "2026-09",
+        "months": 300,
+        "cagr": -0.012063949227081205,
+        "ann_ret": 0.01085147777777774,
+        "ann_vol": 0.20999857395554142,
+        "sharpe": 0.05167405460608078,
+        "t_stat": 0.25837027303040394,
+        "max_dd": -0.70440760515207,
+        "worst_month": -0.32272222222222224,
+        "hit_rate": 0.5166666666666667,
+        "skew": -0.7654768608383271
+      },
+      "walk_forward_top_picks": {
+        "RS_L2_S1_H3_k3_long_short": 72,
+        "SPSR_L1_S1_H6_k8_long_short": 48,
+        "RS_L2_S0_H3_k3_long_short": 48,
+        "SPSR_L2_S0_H3_k3_long_short": 24,
+        "RS_L12_S0_H1_k5_long_short": 12
+      }
+    },
+    "long_only": {
+      "best_cell": "RS_L12_S0_H1_k5_long_only",
+      "best_score": 0.3845223545104651,
+      "best_ann_ret": 0.16962066666666667,
+      "best_max_dd": -0.5391312339436907,
+      "deflated_sharpe_prob": 0.7600158201505971,
+      "n_configs": 360,
+      "mean_score_by_lookback": {
+        "1": 0.162,
+        "2": 0.198,
+        "3": 0.183,
+        "4": 0.237,
+        "6": 0.25,
+        "9": 0.282,
+        "12": 0.259,
+        "15": 0.262,
+        "18": 0.204,
+        "24": 0.117
+      },
+      "mean_score_by_signal": {
+        "RS": 0.196,
+        "SPSR": 0.235
+      },
+      "mean_score_by_skip": {
+        "0": 0.232,
+        "1": 0.199
+      },
+      "half_rank_stability_spearman": -0.052808277841650014,
+      "walk_forward_oos": {
+        "start": "2001-10",
+        "end": "2026-09",
+        "months": 300,
+        "cagr": 0.027087201167218744,
+        "ann_ret": 0.03867805000000006,
+        "ann_vol": 0.15555626473196707,
+        "sharpe": 0.2486434735794453,
+        "t_stat": 1.2432173678972267,
+        "max_dd": -0.4651392864596623,
+        "worst_month": -0.13688,
+        "hit_rate": 0.5166666666666667,
+        "skew": 0.45631127188904425
+      },
+      "walk_forward_top_picks": {
+        "RS_L12_S0_H1_k5_long_only": 96,
+        "RS_L4_S0_H1_k5_long_only": 60,
+        "RS_L4_S0_H1_k3_long_only": 48,
+        "RS_L1_S0_H6_k8_long_only": 24,
+        "RS_L3_S0_H1_k3_long_only": 24
+      }
+    }
+  },
+  "spdr_etf": {
+    "market_buy_hold": {
+      "start": "2001-01",
+      "end": "2026-10",
+      "months": 310,
+      "cagr": 0.08933496593900614,
+      "ann_ret": 0.09723291405656753,
+      "ann_vol": 0.1502550699742439,
+      "sharpe": 0.5299064007709784,
+      "t_stat": 2.6933288883399227,
+      "max_dd": -0.5078483952836823,
+      "worst_month": -0.16518688744029786,
+      "hit_rate": 0.6451612903225806,
+      "skew": -0.5045948350806632
+    },
+    "long_short": {
+      "best_cell": "RS_L6_S1_H6_k1_long_short",
+      "best_score": 0.35961010219118233,
+      "best_ann_ret": 0.0746677496791403,
+      "best_max_dd": -0.5122117819007397,
+      "deflated_sharpe_prob": 0.3528288340976387,
+      "n_configs": 360,
+      "mean_score_by_lookback": {
+        "1": -0.143,
+        "2": -0.087,
+        "3": -0.013,
+        "4": -0.006,
+        "6": 0.07,
+        "9": 0.143,
+        "12": 0.124,
+        "15": 0.07,
+        "18": 0.037,
+        "24": -0.042
+      },
+      "mean_score_by_signal": {
+        "RS": -0.019,
+        "SPSR": 0.049
+      },
+      "mean_score_by_skip": {
+        "0": 0.011,
+        "1": 0.02
+      },
+      "half_rank_stability_spearman": 0.40961607214047435,
+      "walk_forward_oos": {
+        "start": "2006-01",
+        "end": "2026-10",
+        "months": 250,
+        "cagr": -0.0343317231514092,
+        "ann_ret": -0.011170287578990374,
+        "ann_vol": 0.21717451623550288,
+        "sharpe": -0.05143461476335177,
+        "t_stat": -0.23476582285396672,
+        "max_dd": -0.7443063214667396,
+        "worst_month": -0.25618958823967675,
+        "hit_rate": 0.504,
+        "skew": 0.050213643695452365
+      },
+      "walk_forward_top_picks": {
+        "RS_L24_S0_H1_k1_long_short": 60,
+        "RS_L6_S1_H6_k1_long_short": 36,
+        "RS_L9_S1_H6_k2_long_short": 24,
+        "SPSR_L1_S1_H3_k1_long_short": 24,
+        "SPSR_L3_S1_H6_k1_long_short": 22
+      }
+    },
+    "long_only": {
+      "best_cell": "SPSR_L9_S1_H6_k1_long_only",
+      "best_score": 0.42038854082978433,
+      "best_ann_ret": 0.1395095385545157,
+      "best_max_dd": -0.4147696861552237,
+      "deflated_sharpe_prob": 0.4488879294903816,
+      "n_configs": 360,
+      "mean_score_by_lookback": {
+        "1": -0.103,
+        "2": -0.028,
+        "3": 0.045,
+        "4": 0.036,
+        "6": 0.095,
+        "9": 0.155,
+        "12": 0.192,
+        "15": 0.127,
+        "18": 0.035,
+        "24": 0.029
+      },
+      "mean_score_by_signal": {
+        "RS": 0.014,
+        "SPSR": 0.102
+      },
+      "mean_score_by_skip": {
+        "0": 0.042,
+        "1": 0.075
+      },
+      "half_rank_stability_spearman": 0.17071453740641002,
+      "walk_forward_oos": {
+        "start": "2006-01",
+        "end": "2026-10",
+        "months": 250,
+        "cagr": 0.002112994149275682,
+        "ann_ret": 0.006317030966955418,
+        "ann_vol": 0.09209498260266681,
+        "sharpe": 0.06859256376875078,
+        "t_stat": 0.31308078711046977,
+        "max_dd": -0.25713482156527645,
+        "worst_month": -0.0859544260000531,
+        "hit_rate": 0.52,
+        "skew": 0.31685861251350084
+      },
+      "walk_forward_top_picks": {
+        "SPSR_L3_S0_H1_k1_long_only": 48,
+        "SPSR_L9_S1_H3_k1_long_only": 36,
+        "SPSR_L24_S1_H6_k1_long_only": 36,
+        "SPSR_L1_S1_H3_k1_long_only": 36,
+        "SPSR_L12_S0_H6_k3_long_only": 12
+      }
+    }
+  },
+  "best_lookback_plateau_long_short": {
+    "ind12_m": 9,
+    "ind49_m": 9,
+    "spdr_etf": 9
+  }
+}
