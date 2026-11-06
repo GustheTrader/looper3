@@ -31,6 +31,10 @@ Main results:
   - *Balanced:* adds **+2.2%/yr** over SPY (12.9%) with a smaller drawdown (−40%).
   - *Aggressive:* earns **14.7%/yr** with SPY-like drawdown (−48%).
 - **Paying for VIX-call tail hedges made every allocation worse.**
+- **Goal: higher Sharpe and 25%+** (§5.7): combining eight sleeves with risk balanced across four groups raised the Sharpe to about **1.0** before leverage.
+  - With hard limits on each sleeve, levering to a 40% volatility target made **24.3%/yr** (2008–2026), and 23.7%/yr on the untouched 2017–2026 test half. Worst drawdown −35%; SPY made 11.9% and QQQ 17.5%.
+  - The unlimited version reached 26.9% but could lose up to 72% in a single VIX-shock day.
+  - **Selling put spreads to buy calls for free** worked well on QQQ: Sharpe 0.81 per dollar of exposure, with no net premium.
 - **Growth leadership** (§5.6): rotating among QQQ, mid caps, small caps, semis, software and the sectors beat SPY by 3.5%/yr (2002–2026). Selling calls on QQQ loses money; hold QQQ LEAPS without calls. A 50/50 SPY/QQQ core plus two long/short sleeves made 17.6–19.2%/yr in 2007–2026, against 16.6% for QQQ. Over 2000–2026 that same core did no better than SPY and fell 68%.
 - **The long/short momentum sleeve with a 50-day moving-average tilt** (§5.5) adds little on its own since 1996.
   - With 10 stocks per side, a fair test (only stocks already in the S&P 500 at each date) loses money in every version. A biased test using today's index members makes the same rule look like +10%/yr.
@@ -398,6 +402,72 @@ These numbers describe **the period in which this group was the market's story**
 - **Use the QQQ half with its own 50-day tilt and the leadership rotation.** Those are the two tools that would have moved you out of tech in 2000–02.
 - **Growth Balanced has the best return per unit of drawdown** of anything tested (Calmar 0.46). It beats QQQ by 1%/yr with an 11-point smaller drawdown.
 
+### 5.7 Goal: a higher Sharpe and more than 25% a year
+
+**Approach.** A year's return is roughly Sharpe × volatility. Our best mixes had a Sharpe near 0.9 with 15–20% volatility, which caps them near 15–19%. The plan:
+1. Raise the Sharpe by combining return streams that don't move together.
+2. Lever the combination to a fixed volatility target.
+
+All sizing uses past data only. The volatility target was **chosen on 2008-03 → 2016-12 and tested unchanged on 2017-01 → 2026-09.**
+
+**The sleeves** (daily, net of costs, 2008-03 → 2026-09):
+
+| Sleeve | What it is | CAGR | Vol | Sharpe | Max DD |
+|---|---|---|---|---|---|
+| leaders_dual | Top-3 of QQQ/MDY/IJR/SMH/IGV/sectors by SPSR, each held only above its own 50-day average | 6.7% | 12.7% | 0.47 | −25% |
+| qqq_tilt | QQQ, full size above its 50-day average, half size below | 14.3% | 16.5% | 0.81 | −35% |
+| trend | 9 assets (SPY, QQQ, EFA, EEM, TLT, IEF, GLD, DBC, UUP), long or short on a blend of 1/3/6/12-month trends, each at 10% vol | 3.2% | 3.8% | 0.47 | −4% |
+| momentum_vs | Market-neutral CRSP momentum, scaled to 12% vol (the raw version made −1.0%/yr with an −82% DD) | 6.5% | 12.7% | 0.45 | −27% |
+| spike_fade | Short VIX futures after a spike peaks (§4) | 9.3% | 13.6% | 0.62 | −22% |
+| putwrite | CBOE S&P 500 PutWrite index (real index) | 7.4% | 17.2% | 0.42 | −37% |
+| **psc_spy** | **Your idea:** sell a 1-month 30/10-delta put spread, spend all the credit on 25-delta calls (net premium zero) | 4.8% | 8.7% | 0.42 | −26% |
+| **psc_qqq** | The same on QQQ | **10.0%** | 10.8% | **0.81** | −25% |
+
+The put-spread trade returns are per $1 of underlying, held on top of T-bill cash.
+
+**Put spreads to buy calls for free works, especially on QQQ.** Selling the expensive downside volatility pays for the cheaper upside calls. The net result is equity-like exposure (correlation 0.89 with QQQ) with a Sharpe of 0.81 per dollar of notional, and almost no capital tied up. Its risk is the put spread: a fast fall through the short strike costs the full spread width.
+
+**How the sleeves move together** (daily correlation): the equity group (leaders, QQQ tilt, put-spread trades, putwrite) is 0.56–0.89 correlated within itself. Trend (−0.12 to 0.31), momentum (−0.12 to 0.30) and spike-fade (−0.10 to 0.35) are largely independent of it.
+
+**Combining them, no leverage:**
+
+| Weighting | Sharpe 2008–2026 | Sharpe 2008–2016 | Sharpe 2017–2026 | Max DD |
+|---|---|---|---|---|
+| Equal weights | 0.87 | 0.87 | 0.87 | −14% |
+| Inverse-volatility (risk parity) | 0.91 | 0.87 | 0.94 | −6% |
+| **Equal risk across 4 groups** (growth / option premium / trend / momentum) | **0.99** | **1.07** | 0.94 | −7% |
+
+**This raised the Sharpe** from 0.80 (Balanced mix) to about **1.0**.
+
+**Levering it, risk balanced across the 4 groups:**
+
+| Version | 2008–16 CAGR | 2017–26 CAGR | Full CAGR | Vol | Sharpe | Max DD | Avg total exposure | One-day loss if VIX futures double |
+|---|---|---|---|---|---|---|---|---|
+| Vol target 35%, cap 6× (no sleeve limits) | 26.4% | 27.3% | **26.9%** | 30% | 0.90 | −30% | 5.7× | **up to −72%** |
+| **Safe:** vol target 40%, cap 8×, sleeve limits | 24.9% | 23.7% | **24.3%** | 28% | 0.87 | −35% | 5.2× | −12.5% |
+| Safe: vol target 35%, cap 6×, sleeve limits | 22.8% | 21.6% | 22.2% | 25% | 0.88 | −28% | 4.5× | −12.5% |
+| Safe: vol target 30%, cap 6×, sleeve limits | 21.4% | 21.0% | 21.2% | 24% | 0.88 | −28% | 4.3× | −12.5% |
+| QQQ buy & hold | 13.3% | 21.5% | 17.5% | 22% | 0.77 | −49% | 1× | |
+| SPY buy & hold | 8.3% | 15.2% | 11.9% | 20% | 0.60 | −52% | 1× | |
+
+Sleeve limits: spike-fade ≤ 0.25× the account, momentum ≤ 1×, each put-spread sleeve ≤ 0.5×.
+
+**What this means:**
+* **More than 25% is reachable on paper, but the version that gets there is unsafe.** Without limits, the optimiser grows the volatility-short sleeve to about 1× the account. A February-2018 style day (VIX futures doubling) would then cost up to **72%** of the account in a day. The backtest never hit that day only because the rule was flat at the time. **Don't run it.**
+* **With limits, the realistic figure is 21–24% a year.** That's at a Sharpe of about 0.87–0.88, a −28% to −35% max drawdown, and losses only in 2008 (−6%) and 2022 (−16%) for the 40%-target version. That is still **6–7%/yr more than QQQ and 12%/yr more than SPY, with a smaller drawdown than either.** Test-half results came within about 1%/yr of design-half results, a good sign it isn't curve-fit.
+* **This needs a lot of leverage: about 4–5× total exposure.** Most of it is in trend (futures-style positions in bonds, gold, the dollar and equity indices) and market-neutral momentum. That's normal for a futures account, but **not achievable in a cash brokerage account.** In practice:
+  - micro futures (MES, MNQ, ZN/ZB, GC, 6E) for trend;
+  - LEAPS and put-spread-funded calls for the equity sleeves;
+  - SVXY at a capped size for spike-fade;
+  - cash-secured SPY puts for put-write;
+  - a long/short stock basket (or a momentum ETF pair) for momentum.
+* **Ways to beat 25% safely would need new sources of return.** Free daily ETF data couldn't test these:
+  - currency carry, bond carry and commodity-curve sleeves;
+  - real historical option quotes for the option sleeves;
+  - faster (intraday) signals.
+
+A sleeve with a Sharpe of 0.5 that's uncorrelated with everything else adds about as much as making an existing sleeve better.
+
 ---
 
 ## 6. Recommended playbook
@@ -474,4 +544,4 @@ These numbers describe **the period in which this group was the market's story**
 ---
 
 ## 10. Reproduce
-See `README.md`. Pipeline: `fetch_data.py` → `calibrate.py` → `study_leaps.py` → `study_vix.py` → `study_allocation.py` → `study_ls_ma.py` → `study_leadership.py` → `make_charts.py` → `build_page.py`. Every return series and grid cell is in `results/`.
+See `README.md`. Pipeline: `fetch_data.py` → `calibrate.py` → `study_leaps.py` → `study_vix.py` → `study_allocation.py` → `study_ls_ma.py` → `study_leadership.py` → `study_goal25.py` → `make_charts.py` → `build_page.py`. Every return series and grid cell is in `results/`.

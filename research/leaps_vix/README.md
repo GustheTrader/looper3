@@ -12,6 +12,7 @@ python study_vix.py                # VIX spike sleeves, daily
 python study_allocation.py         # capital allocation grid
 python study_ls_ma.py              # long/short momentum with the 50-day tilt
 python study_leadership.py         # QQQ / mid / small / sectors / Mag 7 + AI leadership
+python study_goal25.py             # higher Sharpe + 25% goal: 8 sleeves, risk balancing, leverage, stress test
 python make_charts.py
 python build_page.py              # interactive paper.html from results/
 ```

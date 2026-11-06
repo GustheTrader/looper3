@@ -38,6 +38,10 @@ def main():
             d = yf.download(tick, start="1993-01-01", auto_adjust=False, progress=False)
             d["Close"].to_csv(DATA / f"{name}_raw_d.csv")
             d["Adj Close"].to_csv(DATA / f"{name}_adj_d.csv")
+    if not (DATA / "cross_asset_adj_d.csv").exists():   # goal-25 trend sleeve
+        x = yf.download(["TLT", "IEF", "GLD", "DBC", "UUP", "SHY", "HYG", "EFA", "EEM", "SPY", "QQQ"],
+                        start="2000-01-01", auto_adjust=True, progress=False)["Close"]
+        x.to_csv(DATA / "cross_asset_adj_d.csv")
     for f in DATA.glob("*.csv"):
         x = pd.read_csv(f, index_col=0, parse_dates=True)
         print(f.name, x.shape, x.index[0].date(), x.index[-1].date())

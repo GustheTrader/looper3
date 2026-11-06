@@ -77,6 +77,13 @@ def main():
     gg = pd.DataFrame({k: growth(gm[v]) for k, v in gsel.items()})
     d["growth_mixes"] = pack(gg)
     d["growth_mixes_dd"] = pack(gg / gg.cummax() - 1)
+    z = pd.read_csv(RES / "Z_series_daily.csv", index_col=0, parse_dates=True)
+    zsel = {"SPY": "SPY", "QQQ": "QQQ", "Goal-25 Safe (40% target, sleeve limits)": "cluster_vt40_cap8_safe",
+            "No sleeve limits (unsafe)": "cluster_vt35_cap6"}
+    zm = pd.DataFrame({k: (1 + z[v].fillna(0)).resample("ME").prod() - 1 for k, v in zsel.items()})
+    zg = (1 + zm).cumprod()
+    d["goal"] = pack(zg)
+    d["goal_dd"] = pack(zg / zg.cummax() - 1)
     html = (HERE / "page_template.html").read_text().replace("/*__DATA__*/{}", json.dumps(d, separators=(",", ":")))
     out = HERE / "paper.html"
     out.write_text(html)

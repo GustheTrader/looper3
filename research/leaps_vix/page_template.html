@@ -112,7 +112,7 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </header>
 
   <section>
-    <h2>The six answers</h2>
+    <h2>The seven answers</h2>
     <div class="answers">
       <div><span class="q">LEAPS vs shares on SPY</span><span class="a">Same return for 28% of the capital</span><span class="d">Selling calls above the LEAPS cut volatility and drawdown (−40% vs −51%). The premium is mostly paid back in rallies, so it lowers risk rather than adding return.</span></div>
       <div><span class="q">LEAPS on momentum sectors</span><span class="a">No. Hold sectors as shares</span><span class="d">Rolling LEAPS 4–5 times a year costs 3.8%/yr in spreads, and calls sold on rising sectors paid out about 3%/yr more than they collected.</span></div>
@@ -120,6 +120,7 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
       <div><span class="q">Splitting the account</span><span class="a">Fund the fade sleeve with freed-up cash</span><span class="d">Balanced mix: 12.9%/yr vs SPY's 10.7%, with a −40% drawdown vs −51%. Standing VIX-call insurance hurt every mix.</span></div>
       <div><span class="q">Long/short with a 50-day tilt</span><span class="a">Keep the sleeve neutral, with broad baskets</span><span class="d">The 150/50 tilt was a big edge before 1996 and is small since. A 20% market-neutral momentum sleeve improved every mix (Balanced Sharpe 0.80 → 0.89).</span></div>
       <div><span class="q">Growth leadership: QQQ, mid/small caps, Mag 7, AI</span><span class="a">Own the leaders by rule; LEAPS on QQQ, no calls</span><span class="d">A 50/50 SPY/QQQ core plus two long/short sleeves made 17.6–19.2%/yr in 2007–2026, vs 16.6% for QQQ. The same core lost 60% in 2000–02.</span></div>
+      <div><span class="q">Goal: higher Sharpe and 25%+</span><span class="a">About 24% a year with safe limits; 27% only by taking crash risk</span><span class="d">Eight sleeves with risk balanced across four groups reached a Sharpe of about 1.0 before leverage. Levered with hard limits: 24.3%/yr, max drawdown −35%. Selling put spreads to buy calls for free worked best on QQQ.</span></div>
     </div>
   </section>
 
@@ -367,7 +368,53 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </section>
 
   <section>
-    <h2>7. The playbook</h2>
+    <h2>7. Goal: higher Sharpe and 25%+ a year</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>A year's return is roughly the Sharpe ratio times volatility. To clear 25% safely, the plan was to raise the Sharpe first by combining return streams that don't move together, then lever the combination to a fixed volatility target. All sizing uses past data only. The volatility target was <strong>chosen on 2008–2016 and then tested unchanged on 2017–2026</strong>.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Sleeve, Mar 2008 – Sep 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>QQQ, half size below its 50-day average</td><td>14.3%</td><td>0.81</td><td>−35%</td></tr>
+        <tr class="hl"><td>Your idea on QQQ: sell a 30/10-delta put spread, spend the credit on 25-delta calls (net premium zero)</td><td>10.0%</td><td>0.81</td><td>−25%</td></tr>
+        <tr><td>The same on SPY</td><td>4.8%</td><td>0.42</td><td>−26%</td></tr>
+        <tr><td>Spike fade: short VIX futures after the peak</td><td>9.3%</td><td>0.62</td><td>−22%</td></tr>
+        <tr><td>CBOE put-write index (real)</td><td>7.4%</td><td>0.42</td><td>−37%</td></tr>
+        <tr><td>Leaders with dual momentum (top 3, each only above its own 50-day average)</td><td>6.7%</td><td>0.47</td><td>−25%</td></tr>
+        <tr><td>Market-neutral momentum, scaled to 12% volatility</td><td>6.5%</td><td>0.45</td><td>−27%</td></tr>
+        <tr><td>Cross-asset trend: stocks, bonds, gold, commodities, dollar</td><td>3.2%</td><td>0.47</td><td>−4%</td></tr>
+      </tbody>
+      <caption>Put-spread and trend sleeves are shown per $1 of exposure, held on top of T-bill cash. Trend, momentum and spike-fade barely move with the equity sleeves (correlations about −0.1 to 0.35).</caption>
+    </table></div>
+    <div class="prose"><p><strong>Put spreads to buy calls for free works, especially on QQQ.</strong> Selling expensive downside volatility pays for the cheaper upside calls, which gives equity-like exposure with a Sharpe of 0.81 and almost no capital tied up. Its risk is a fast fall through the short put: that costs the full width of the spread. With the sleeves balanced so that each of four groups (growth, option premium, trend, momentum) carries equal risk, the <strong>Sharpe rose to about 1.0 before leverage</strong>, up from 0.80 for the Balanced mix.</p></div>
+    <figure>
+      <div class="fig"><h3>The goal portfolio vs owning QQQ or SPY, Mar 2008 – Sep 2026</h3><div class="chart"><canvas id="c_goal" aria-label="Growth of $1 for the goal portfolios, QQQ and SPY"></canvas></div>
+        <div class="chart short"><canvas id="c_goal_dd" aria-label="Drawdowns of the goal portfolios, QQQ and SPY"></canvas></div></div>
+      <figcaption>Monthly, net of costs and borrowing. Goal-25 Safe levers the four-group risk-balanced portfolio to a 40% volatility target with an 8× cap, and limits spike-fade to 0.25× the account, momentum to 1× and each put-spread sleeve to 0.5×.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Levered versions</th><th>CAGR 2008–16</th><th>CAGR 2017–26</th><th>CAGR full</th><th>Sharpe</th><th>Max DD</th><th>Exposure</th><th>VIX-shock day</th></tr></thead>
+      <tbody>
+        <tr><td>No sleeve limits (35% target, 6× cap)</td><td>26.4%</td><td>27.3%</td><td>26.9%</td><td>0.90</td><td>−30%</td><td>5.7×</td><td class="neg">up to −72%</td></tr>
+        <tr class="hl"><td>Goal-25 Safe (40% target, 8× cap, sleeve limits)</td><td>24.9%</td><td>23.7%</td><td>24.3%</td><td>0.87</td><td>−35%</td><td>5.2×</td><td>−12.5%</td></tr>
+        <tr><td>Safe, 35% target, 6× cap</td><td>22.8%</td><td>21.6%</td><td>22.2%</td><td>0.88</td><td>−28%</td><td>4.5×</td><td>−12.5%</td></tr>
+        <tr><td>QQQ buy &amp; hold</td><td>13.3%</td><td>21.5%</td><td>17.5%</td><td>0.77</td><td>−49%</td><td>1×</td><td>—</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>8.3%</td><td>15.2%</td><td>11.9%</td><td>0.60</td><td>−52%</td><td>1×</td><td>—</td></tr>
+      </tbody>
+      <caption>"VIX-shock day" is the one-day loss if VIX futures double, as in February 2018. Goal-25 Safe lost money only in 2008 (−6%) and 2022 (−16%). Its best years were 2009 (+53%) and 2017 (+54%).</caption>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <ul class="tight">
+        <li><strong>Above 25% is reachable on paper, but not safely.</strong> Without limits, the sizing grows the volatility-short sleeve to about 1× the account, so a February-2018 style day could cost up to 72% at once. The backtest only avoided it because the rule happened to be out of the market that day.</li>
+        <li><strong>With limits, expect 21–24% a year.</strong> That's 6–7%/yr more than QQQ and 12%/yr more than SPY, with smaller drawdowns. The 2017–2026 test came within about 1%/yr of the 2008–2016 design period.</li>
+        <li><strong>It needs 4–5× total exposure.</strong> That's normal in a futures account and impossible in a cash account. Practical tools: micro futures for trend, LEAPS and put-spread-funded calls for equities, capped SVXY for the spike fade, and cash-secured SPY puts.</li>
+        <li><strong>To clear 25% safely, add new uncorrelated sources:</strong> currency and bond carry, commodity curves, and real option quotes. Free daily ETF data couldn't test these.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>8. The playbook</h2>
     <h3>Growth Balanced account at a glance</h3>
     <div class="alloc">
       <div><span class="pct">~15%</span><span class="what">SPY LEAPS + monthly 0.25-delta calls (the income half)</span></div>
@@ -398,7 +445,7 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </section>
 
   <section>
-    <h2>8. Limitations and risks</h2>
+    <h2>9. Limitations and risks</h2>
     <ul class="tight prose">
       <li><strong>Modelled option prices.</strong> The model matches ^PUT and VIXY on average, but single months can differ (monthly correlation with ^PUT is 0.86). Real fills and changes in skew will vary.</li>
       <li><strong>Early assignment.</strong> Short calls that are in the money can be assigned early, especially before ex-dividend dates. The LEAPS then have to be exercised or sold. The monthly model ignores this.</li>
@@ -544,6 +591,10 @@ function render() {
     { label: "1996–2026", data: le.series["1996-2026"], backgroundColor: S[0], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
   ] } }));
 
+  charts.push(lineChart("c_goal", DATA.goal, [S[1], S[0], S[2], S[3]]));
+  const zdd = lineChart("c_goal_dd", DATA.goal_dd, [S[1], S[0], S[2], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });
+  zdd.options.plugins.legend.display = false; zdd.update();
+  charts.push(zdd);
   charts.push(lineChart("c_growth", DATA.growth_mixes, [S[0], S[1], S[2], S[3]]));
   const gdd = lineChart("c_growth_dd", DATA.growth_mixes_dd, [S[0], S[1], S[2], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });
   gdd.options.plugins.legend.display = false; gdd.update();
