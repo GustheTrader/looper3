@@ -31,6 +31,7 @@ Main results:
   - *Balanced:* adds **+2.2%/yr** over SPY (12.9%) with a smaller drawdown (−40%).
   - *Aggressive:* earns **14.7%/yr** with SPY-like drawdown (−48%).
 - **Paying for VIX-call tail hedges made every allocation worse.**
+- **Growth leadership** (§5.6): rotating among QQQ, mid caps, small caps, semis, software and the sectors beat SPY by 3.5%/yr (2002–2026). Selling calls on QQQ loses money; hold QQQ LEAPS without calls. A 50/50 SPY/QQQ core plus two long/short sleeves made 17.6–19.2%/yr in 2007–2026, against 16.6% for QQQ. Over 2000–2026 that same core did no better than SPY and fell 68%.
 - **The long/short momentum sleeve with a 50-day moving-average tilt** (§5.5) adds little on its own since 1996.
   - With 10 stocks per side, a fair test (only stocks already in the S&P 500 at each date) loses money in every version. A biased test using today's index members makes the same rule look like +10%/yr.
   - On survivorship-free CRSP portfolios, tilting toward longs above the 50-day average was a huge edge before 1996 (Sharpe 0.39 → 0.84). Since 1996 it's small (0.20 → 0.27).
@@ -306,9 +307,112 @@ The mix is already long the market through the LEAPS core. So the **market-neutr
 
 These lists come from the stock-level test that §5.5 shows lost money. Treat them as a scan, not a trade list.
 
+### 5.6 Growth leadership: QQQ, mid and small caps, the leading sectors, Mag 7 and AI
+
+The aim is to hold the leading parts of the market instead of the whole market. **Hindsight warning:** "Mag 7" and "AI leaders" are groups defined *after* they won. A 30-year backtest of them would pick the winners in advance. So the study has two parts:
+1. A **rule-based** version that could have been run in real time, 2002–2026.
+2. The **actual named basket**, tested only from January 2023, when the group was first identifiable.
+
+**Part 1: rule-based leadership rotation (daily, 2002-08 → 2026-10).**
+- **The menu:** QQQ, MDY (mid caps), IJR (small caps), SMH (semiconductors), IGV (software) and the SPDR sectors.
+- **Monthly ranking:** blended SPSR (6/9/12-month windows, skip 1). Hold the top 3, keeping a holding while it ranks in the top 5.
+- **The growth mix:** fixed buckets of 40% QQQ, 15% MDY, 10% IJR and 35% leadership rotation.
+
+| Strategy | CAGR | Vol | Sharpe | Max DD | 2008 | 2022 |
+|---|---|---|---|---|---|---|
+| SPY | 11.1% | 18.7% | 0.57 | −55% | −36.8% | −18.2% |
+| QQQ | 15.7% | 22.0% | 0.70 | −53% | −41.7% | −32.6% |
+| MDY (mid caps) | 10.4% | 21.6% | 0.49 | −55% | −36.4% | −13.3% |
+| IJR (small caps) | 10.7% | 22.9% | 0.48 | −58% | −31.5% | −16.2% |
+| SMH (semis) | 17.1% | 31.3% | 0.61 | −68% | −45.7% | −33.5% |
+| **Leadership rotation, top 3** | **14.6%** | 20.7% | **0.68** | −50% | −33.0% | −8.3% |
+| ↳ with 50-day tilt (100% above / 50% below) | 11.1% | 15.3% | 0.65 | **−36%** | −20.9% | −8.6% |
+| Growth mix (40/15/10/35) | 14.3% | 20.4% | 0.68 | −52% | −36.5% | −19.9% |
+| ↳ with 50-day tilt | 11.0% | 14.9% | 0.66 | −37% | −23.3% | −19.4% |
+| ↳ tilt + short bottom-3 below the average | 7.2% | 13.3% | 0.47 | −28% | −14.7% | −17.7% |
+| Leadership L/S 150/50, 1% band (top 3 vs bottom 3) | −0.7% | 27.3% | 0.05 | −56% | +17.9% | −2.3% |
+
+Most-held over 24 years:
+
+| QQQ | SMH | XLK | XLY | XLE | XLV | MDY | IJR |
+|---|---|---|---|---|---|---|---|
+| 35% of months | 33% | 28% | 27% | 26% | 20% | 20% | 20% |
+
+**Today's top 3: SMH, XLE, XLK.** SPY and QQQ are both below their 50-day averages.
+
+* **Rotation picks up the leaders on its own.** It held QQQ or semis in about a third of all months, and mid/small caps when they led. It beat SPY by 3.5%/yr. It didn't beat QQQ over this tech-led period, but it cut 2022's loss from −33% to −8%.
+* **Shorting the laggard ETFs doesn't pay.** Long/short versions earned about 0%. The edge is in *owning* leaders, not shorting laggards.
+* **The 50-day tilt trades return for a smaller drawdown:** about −3.5%/yr of return for about −15 points of drawdown.
+
+**Part 2: the named Mag 7 + AI basket (2023-01 → 2026-11, hindsight).**
+
+| Basket, equal weight | CAGR | Sharpe | Max DD | 2023 | 2024 | 2025 | 2026 YTD |
+|---|---|---|---|---|---|---|---|
+| Mag 7 | 47.7% | 1.44 | −29% | +109% | +62% | +26% | +5% |
+| AI leaders (NVDA, AVGO, AMD, TSM, ORCL, PLTR, ANET, MU, SMCI, ARM, VRT, CRWD, NOW, DELL) | 78.7% | 1.58 | −36% | +135% | +88% | +48% | +41% |
+| Mag 7 + AI combined | 67.4% | 1.61 | −32% | +121% | +76% | +41% | +31% |
+| ↳ with 50-day tilt | 54.6% | 1.58 | −24% | +98% | +58% | +44% | +18% |
+| Top-5 momentum inside the group | 70.4% | 1.30 | −38% | +119% | +87% | +41% | +34% |
+| QQQ | 27.2% | 1.05 | −23% | +55% | +26% | +21% | +7% |
+| SMH | 49.2% | 1.16 | −36% | +73% | +39% | +49% | +29% |
+
+These numbers describe **the period in which this group was the market's story**, so they are not a forecast. SMH, a rule-based ETF anyone could have bought, captured most of the AI move (+49%/yr) without picking names. For a forward-looking sleeve, use the top-5 momentum rule inside a *broad* growth list that you refresh each year, rather than a frozen list of today's winners.
+
+**Part 3: LEAPS + calls on QQQ (2000-01 → 2026-10).**
+
+| QQQ | CAGR | Sharpe | Max DD | Call premium /yr | Call payouts /yr |
+|---|---|---|---|---|---|
+| Shares | 8.3% | 0.47 | −81% | — | — |
+| Covered call | 6.9% | 0.43 | −79% | 10.9% | **15.0%** |
+| LEAPS only | 7.1% | 0.41 | −85% | — | — |
+| LEAPS + calls | 3.6% | 0.29 | −83% | 12.0% | **16.4%** |
+
+**Don't sell calls on QQQ.** Like the momentum sectors, QQQ trends up hard enough that the calls you sell pay out more than they collect. Hold QQQ LEAPS *without* calls, and keep the income calls on SPY.
+
+**The tilt protects QQQ best when it uses QQQ's own 50-day average:**
+
+| QQQ, 100% above / 50% below its 50-day average | CAGR 1999–2026 | Max DD | 2000–02 | CAGR 2007–2026 | Max DD |
+|---|---|---|---|---|---|
+| Buy & hold | 10.5% | −83% | −73% | 16.6% | −53% |
+| Tilt by SPY's average | 8.5% | −72% | −63% | 13.0% | −37% |
+| **Tilt by QQQ's own average** | **10.2%** | **−64%** | **−48%** | 13.7% | −36% |
+| Tilt by QQQ's own average, 1% band | 10.6% | −65% | −49% | 13.9% | −38% |
+
+**Part 4: growth mixes (2007-04 → 2026-09).** In each mix:
+- The **SPY core** is SPY LEAPS + calls.
+- The **QQQ core** is QQQ LEAPS with no calls.
+- Both use the post-spike boost, plus the 20% spike-fade sleeve.
+
+| Mix | CAGR | Vol | Sharpe | Max DD | 2008 | 2020 | 2022 |
+|---|---|---|---|---|---|---|---|
+| Balanced (SPY core) | 13.1% | 15.0% | 0.80 | −39.7% | −21.6% | +30.2% | −15.2% |
+| Balanced + 20% momentum L/S | 14.0% | 14.3% | 0.89 | −36.9% | −18.4% | +27.9% | −11.0% |
+| QQQ core only | 19.7% | 22.7% | 0.84 | −47.7% | −36.5% | +82.1% | −35.3% |
+| 50/50 SPY core / QQQ core | 16.6% | 18.1% | 0.86 | −43.4% | −29.1% | +54.5% | −25.6% |
+| **Growth Balanced:** 50/50 core + 20% leadership L/S 150/50 (band) + 20% momentum L/S | **17.6%** | 18.5% | 0.89 | **−38.6%** | −23.1% | +70.4% | −21.8% |
+| **Growth Aggressive:** 50/50 core + 20% growth mix (tilted) + 20% momentum L/S | **19.2%** | 20.0% | **0.91** | −45.0% | −30.8% | +61.4% | −25.8% |
+| SPY buy & hold | 11.0% | 15.5% | 0.66 | −50.8% | −36.8% | +18.3% | −18.2% |
+| QQQ buy & hold | 16.6% | 18.8% | 0.83 | −49.7% | −41.7% | +48.4% | −32.6% |
+
+* **Adding QQQ raises returns a lot, but only in this window.** 2007–2026 was an exceptional run for large-cap tech. Over 2000–2026, the same 50/50 SPY/QQQ LEAPS core made 8.2%/yr, no better than SPY, with a **−68%** drawdown, and it lost 60% in 2000–02.
+- **Use the QQQ half with its own 50-day tilt and the leadership rotation.** Those are the two tools that would have moved you out of tech in 2000–02.
+- **Growth Balanced has the best return per unit of drawdown** of anything tested (Calmar 0.46). It beats QQQ by 1%/yr with an 11-point smaller drawdown.
+
 ---
 
 ## 6. Recommended playbook
+
+**Growth version (Growth Balanced, §5.6):**
+```
+ ~15%  SPY LEAPS + monthly 0.25-delta calls (the income half of the core)
+ ~17%  QQQ LEAPS, NO calls; cut to half size while QQQ is below its own 50-day average
+       (the tilt was tested on QQQ shares, not yet inside this mix)
+ ~20%  spike-fade sleeve (T-bills until the signal fires)
+ ~20%  leadership long/short: long the top-3 of QQQ/MDY/IJR/SMH/IGV/sectors by SPSR,
+       short the bottom 3; 150/50 above SPY's 50-day average, 50/150 below (1% band)
+ ~20%  market-neutral momentum long/short (broad baskets)
+  rest T-bills / collateral
+```
 
 **Account structure (Balanced):**
 ```
@@ -338,6 +442,7 @@ These lists come from the stock-level test that §5.5 shows lost money. Treat th
 2. **On momentum sectors:** no. Hold the momentum tilt in shares, and keep LEAPS and calls on the index.
 3. **VIX spikes:** fade them after the peak (Sharpe 0.6, confirmed on SVXY). Don't chase them, and don't pay for standing VIX-call insurance.
 4. **Allocation:** spend the capital LEAPS free up on the spike-fade sleeve, add the post-spike boost, and set λ from your drawdown budget (0.75 / 1.0 / 1.25). This beat SPY on return-to-drawdown in all three versions.
+6. **Growth leadership (QQQ, mid/small caps, Mag 7, AI):** own leaders through a rule (SPSR rotation over QQQ, MDY, IJR, SMH, IGV and the sectors), not a frozen list of today's winners. Hold QQQ through LEAPS without calls, and tilt it by its own 50-day average. A 50/50 SPY/QQQ core plus the two long/short sleeves gave the best 2007–2026 results (17.6–19.2%/yr). That era favoured tech, though, and the same core lost 60% in 2000–02.
 5. **Long/short momentum with the 50-day tilt:** a broad, market-neutral momentum sleeve at 20% improves every mix. The 150/50 tilt was a large edge before 1996 but is small now. If used, apply it with a 1% band, and hold broad baskets, not 10 stocks a side.
 
 ---
@@ -369,4 +474,4 @@ These lists come from the stock-level test that §5.5 shows lost money. Treat th
 ---
 
 ## 10. Reproduce
-See `README.md`. Pipeline: `fetch_data.py` → `calibrate.py` → `study_leaps.py` → `study_vix.py` → `study_allocation.py` → `study_ls_ma.py` → `make_charts.py` → `build_page.py`. Every return series and grid cell is in `results/`.
+See `README.md`. Pipeline: `fetch_data.py` → `calibrate.py` → `study_leaps.py` → `study_vix.py` → `study_allocation.py` → `study_ls_ma.py` → `study_leadership.py` → `make_charts.py` → `build_page.py`. Every return series and grid cell is in `results/`.

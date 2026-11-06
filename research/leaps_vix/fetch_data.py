@@ -29,6 +29,15 @@ def main():
         d = yf.download(ETFS, start="1993-01-01", auto_adjust=False, progress=False)
         d["Close"].to_csv(DATA / "etf_raw_d.csv")       # split-adjusted, NOT dividend-adjusted
         d["Adj Close"].to_csv(DATA / "etf_adj_d.csv")   # total-return series
+    # growth leadership study: QQQ, mid/small caps, semis, software, Mag 7 + AI leaders
+    groups = {"growth_etf": ["QQQ", "MDY", "IJH", "IJR", "IWM", "SMH", "SOXX", "IGV", "SPY"],
+              "ai_stocks": ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "AMD", "TSM", "ORCL",
+                            "PLTR", "ANET", "MU", "SMCI", "ARM", "VRT", "CRWD", "NOW", "DELL"]}
+    for name, tick in groups.items():
+        if not (DATA / f"{name}_raw_d.csv").exists():
+            d = yf.download(tick, start="1993-01-01", auto_adjust=False, progress=False)
+            d["Close"].to_csv(DATA / f"{name}_raw_d.csv")
+            d["Adj Close"].to_csv(DATA / f"{name}_adj_d.csv")
     for f in DATA.glob("*.csv"):
         x = pd.read_csv(f, index_col=0, parse_dates=True)
         print(f.name, x.shape, x.index[0].date(), x.index[-1].date())

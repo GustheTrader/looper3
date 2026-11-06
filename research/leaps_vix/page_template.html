@@ -112,13 +112,14 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </header>
 
   <section>
-    <h2>The five answers</h2>
+    <h2>The six answers</h2>
     <div class="answers">
       <div><span class="q">LEAPS vs shares on SPY</span><span class="a">Same return for 28% of the capital</span><span class="d">Selling calls above the LEAPS cut volatility and drawdown (−40% vs −51%). The premium is mostly paid back in rallies, so it lowers risk rather than adding return.</span></div>
       <div><span class="q">LEAPS on momentum sectors</span><span class="a">No. Hold sectors as shares</span><span class="d">Rolling LEAPS 4–5 times a year costs 3.8%/yr in spreads, and calls sold on rising sectors paid out about 3%/yr more than they collected.</span></div>
       <div><span class="q">Trading VIX spikes</span><span class="a">Fade the spike after it peaks</span><span class="d">+7.5%/yr at a Sharpe of 0.61 (real SVXY check: +7.7%). Buying volatility after it spikes lost money.</span></div>
       <div><span class="q">Splitting the account</span><span class="a">Fund the fade sleeve with freed-up cash</span><span class="d">Balanced mix: 12.9%/yr vs SPY's 10.7%, with a −40% drawdown vs −51%. Standing VIX-call insurance hurt every mix.</span></div>
       <div><span class="q">Long/short with a 50-day tilt</span><span class="a">Keep the sleeve neutral, with broad baskets</span><span class="d">The 150/50 tilt was a big edge before 1996 and is small since. A 20% market-neutral momentum sleeve improved every mix (Balanced Sharpe 0.80 → 0.89).</span></div>
+      <div><span class="q">Growth leadership: QQQ, mid/small caps, Mag 7, AI</span><span class="a">Own the leaders by rule; LEAPS on QQQ, no calls</span><span class="d">A 50/50 SPY/QQQ core plus two long/short sleeves made 17.6–19.2%/yr in 2007–2026, vs 16.6% for QQQ. The same core lost 60% in 2000–02.</span></div>
     </div>
   </section>
 
@@ -311,7 +312,72 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </section>
 
   <section>
-    <h2>6. The playbook</h2>
+    <h2>6. Growth leadership: QQQ, mid and small caps, Mag 7 and AI</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>This section holds the leading parts of the market instead of all of it. "Mag 7" and "AI leaders" are groups we only name today because they already won, so a 30-year backtest of them would pick the winners in advance. We tested the idea two ways: a <strong>rule-based rotation</strong> that could have been run in real time, and the <strong>actual named basket from January 2023</strong>, when the group was first identifiable.</p>
+      <p><strong>The rotation:</strong> each month, rank QQQ, MDY (mid caps), IJR (small caps), SMH (semiconductors), IGV (software) and the 11 sector ETFs by the strength rating, and hold the top 3. Over 24 years it held QQQ in 35% of months, semis 33%, tech 28%, and mid and small caps 20% each. Today's picks are <strong>SMH, XLE and XLK</strong>.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Daily, Aug 2002 – Oct 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>2008</th><th>2022</th></tr></thead>
+      <tbody>
+        <tr><td>SPY</td><td>11.1%</td><td>0.57</td><td>−55%</td><td>−36.8%</td><td>−18.2%</td></tr>
+        <tr><td>QQQ</td><td>15.7%</td><td>0.70</td><td>−53%</td><td>−41.7%</td><td>−32.6%</td></tr>
+        <tr><td>Mid caps (MDY) / small caps (IJR)</td><td>10.4% / 10.7%</td><td>0.49 / 0.48</td><td>−55% / −58%</td><td>−36% / −32%</td><td>−13% / −16%</td></tr>
+        <tr class="hl"><td>Leadership rotation, top 3</td><td>14.6%</td><td>0.68</td><td>−50%</td><td>−33.0%</td><td>−8.3%</td></tr>
+        <tr><td>Leadership rotation, 50-day tilt (100% above / 50% below)</td><td>11.1%</td><td>0.65</td><td>−36%</td><td>−20.9%</td><td>−8.6%</td></tr>
+        <tr><td>Growth mix: 40% QQQ, 15% mid, 10% small, 35% rotation</td><td>14.3%</td><td>0.68</td><td>−52%</td><td>−36.5%</td><td>−19.9%</td></tr>
+        <tr><td>Leadership long/short 150/50 with 1% band</td><td class="neg">−0.7%</td><td>0.05</td><td>−56%</td><td>+17.9%</td><td>−2.3%</td></tr>
+      </tbody>
+      <caption>Owning the leaders works; shorting the lagging ETFs earned nothing.</caption>
+    </table></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Named basket, Jan 2023 – Nov 2026 (hindsight)</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>Mag 7, equal weight</td><td>47.7%</td><td>1.44</td><td>−29%</td></tr>
+        <tr><td>AI leaders: NVDA, AVGO, AMD, TSM, ORCL, PLTR, ANET, MU, SMCI, ARM, VRT, CRWD, NOW, DELL</td><td>78.7%</td><td>1.58</td><td>−36%</td></tr>
+        <tr><td>Mag 7 + AI, with 50-day tilt</td><td>54.6%</td><td>1.58</td><td>−24%</td></tr>
+        <tr><td>Top-5 momentum inside the group</td><td>70.4%</td><td>1.30</td><td>−38%</td></tr>
+        <tr><td>SMH (semiconductor ETF, no stock picking)</td><td>49.2%</td><td>1.16</td><td>−36%</td></tr>
+        <tr><td>QQQ</td><td>27.2%</td><td>1.05</td><td>−23%</td></tr>
+      </tbody>
+      <caption>These figures describe the years when this group was the market's story. They are not a forecast.</caption>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <ul class="tight">
+        <li><strong>Don't sell calls on QQQ.</strong> From 2000 to 2026, calls sold on QQQ paid out 16.4%/yr against 12.0% collected. Hold QQQ through LEAPS without calls, and keep the income calls on SPY.</li>
+        <li><strong>Tilt QQQ by its own 50-day average.</strong> Cutting to half size below QQQ's own average limited 2000–02 to −48%, against −73% for buy-and-hold. The worst drop over 1999–2026 fell from −83% to −64% at about the same return.</li>
+      </ul>
+    </div>
+    <figure>
+      <div class="fig"><h3>Growth mixes vs owning QQQ or SPY, 2007–2026</h3><div class="chart"><canvas id="c_growth" aria-label="Growth of $1 for growth mixes, QQQ and SPY"></canvas></div>
+        <div class="chart short"><canvas id="c_growth_dd" aria-label="Drawdown of growth mixes, QQQ and SPY"></canvas></div></div>
+      <figcaption>Growth Balanced: a 50/50 SPY/QQQ LEAPS core with the spike-fade sleeve, plus 20% leadership long/short (150/50, 1% band) and 20% market-neutral momentum. Growth Aggressive swaps the leadership long/short for a 20% growth-mix sleeve.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Apr 2007 – Sep 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>2008</th><th>2020</th><th>2022</th></tr></thead>
+      <tbody>
+        <tr><td>Balanced (SPY core) + momentum L/S</td><td>14.0%</td><td>0.89</td><td>−36.9%</td><td>−18.4%</td><td>+27.9%</td><td>−11.0%</td></tr>
+        <tr class="hl"><td>Growth Balanced</td><td>17.6%</td><td>0.89</td><td>−38.6%</td><td>−23.1%</td><td>+70.4%</td><td>−21.8%</td></tr>
+        <tr class="hl"><td>Growth Aggressive</td><td>19.2%</td><td>0.91</td><td>−45.0%</td><td>−30.8%</td><td>+61.4%</td><td>−25.8%</td></tr>
+        <tr><td>QQQ buy &amp; hold</td><td>16.6%</td><td>0.83</td><td>−49.7%</td><td>−41.7%</td><td>+48.4%</td><td>−32.6%</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>11.0%</td><td>0.66</td><td>−50.8%</td><td>−36.8%</td><td>+18.3%</td><td>−18.2%</td></tr>
+      </tbody>
+      <caption>2007–2026 was an exceptional run for large-cap tech. Over 2000–2026 the same 50/50 SPY/QQQ LEAPS core made 8.2%/yr, no better than SPY, and fell 68% from peak.</caption>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>7. The playbook</h2>
+    <h3>Growth Balanced account at a glance</h3>
+    <div class="alloc">
+      <div><span class="pct">~15%</span><span class="what">SPY LEAPS + monthly 0.25-delta calls (the income half)</span></div>
+      <div><span class="pct">~17%</span><span class="what">QQQ LEAPS, no calls; half size while QQQ is below its 50-day average</span></div>
+      <div><span class="pct">~20%</span><span class="what">Spike-fade sleeve, held in T-bills until the signal fires</span></div>
+      <div><span class="pct">~20%</span><span class="what">Leadership long/short: top-3 vs bottom-3 of the menu, 150/50 by SPY's 50-day average, 1% band</span></div>
+      <div><span class="pct">~20%</span><span class="what">Market-neutral momentum long/short, broad baskets</span></div>
+      <div><span class="pct">rest</span><span class="what">T-bills: collateral</span></div>
+    </div>
+    <p class="notice">The QQQ half-size rule was tested on QQQ shares, not yet inside this full mix.</p>
     <h3>Balanced account at a glance</h3>
     <div class="alloc">
       <div><span class="pct">~29%</span><span class="what">SPY LEAPS, 0.80 delta, 1.5–2 years, sized to 1.0× account exposure</span></div>
@@ -332,7 +398,7 @@ footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); 
   </section>
 
   <section>
-    <h2>7. Limitations and risks</h2>
+    <h2>8. Limitations and risks</h2>
     <ul class="tight prose">
       <li><strong>Modelled option prices.</strong> The model matches ^PUT and VIXY on average, but single months can differ (monthly correlation with ^PUT is 0.86). Real fills and changes in skew will vary.</li>
       <li><strong>Early assignment.</strong> Short calls that are in the money can be assigned early, especially before ex-dividend dates. The LEAPS then have to be exercised or sold. The monthly model ignores this.</li>
@@ -477,6 +543,11 @@ function render() {
     { label: "1927–1996", data: le.series["1927-1996"], backgroundColor: S[1], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
     { label: "1996–2026", data: le.series["1996-2026"], backgroundColor: S[0], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
   ] } }));
+
+  charts.push(lineChart("c_growth", DATA.growth_mixes, [S[0], S[1], S[2], S[3]]));
+  const gdd = lineChart("c_growth_dd", DATA.growth_mixes_dd, [S[0], S[1], S[2], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });
+  gdd.options.plugins.legend.display = false; gdd.update();
+  charts.push(gdd);
 
   charts.push(lineChart("c_mixes", DATA.mixes, [S[1], S[2], S[0], S[3]]));
   const dd = lineChart("c_dd", DATA.mixes_dd, [S[1], S[2], S[0], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });

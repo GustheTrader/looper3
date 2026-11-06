@@ -70,6 +70,13 @@ def main():
     d["ls_eras"] = {"labels": [lab for _, lab in order],
                     "series": {era: [round(float(fr[(fr.period == era) & (fr.key == k)].sharpe.iloc[0]), 3) for k, _ in order]
                                for era in ["1927-1996", "1996-2026"]}}
+    gm = pd.read_csv(RES / "G4_mix_series.csv", index_col=0, parse_dates=True)
+    gsel = {"QQQ buy & hold": "QQQ buy & hold", "SPY buy & hold": "SPY buy & hold",
+            "Growth Balanced": "Same + 20% leadership L/S 150/50 (band) + 20% momentum L/S",
+            "Growth Aggressive": "Same + 20% growth mix (MA) + 20% momentum L/S"}
+    gg = pd.DataFrame({k: growth(gm[v]) for k, v in gsel.items()})
+    d["growth_mixes"] = pack(gg)
+    d["growth_mixes_dd"] = pack(gg / gg.cummax() - 1)
     html = (HERE / "page_template.html").read_text().replace("/*__DATA__*/{}", json.dumps(d, separators=(",", ":")))
     out = HERE / "paper.html"
     out.write_text(html)

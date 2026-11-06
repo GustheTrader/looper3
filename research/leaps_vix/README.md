@@ -10,6 +10,8 @@ python calibrate.py                # fit the option model to ^PUT and VIXY -> re
 python study_leaps.py              # LEAPS / covered-call / PMCC on SPY and momentum sectors (~5 min)
 python study_vix.py                # VIX spike sleeves, daily
 python study_allocation.py         # capital allocation grid
+python study_ls_ma.py              # long/short momentum with the 50-day tilt
+python study_leadership.py         # QQQ / mid / small / sectors / Mag 7 + AI leadership
 python make_charts.py
 python build_page.py              # interactive paper.html from results/
 ```

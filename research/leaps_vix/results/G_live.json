@@ -1,0 +1,28 @@
+{
+ "leadership_top3_now": [
+  "SMH",
+  "XLE",
+  "XLK"
+ ],
+ "share_of_months_held": {
+  "QQQ": 0.345,
+  "SMH": 0.326,
+  "XLK": 0.276,
+  "XLY": 0.273,
+  "XLE": 0.255,
+  "XLV": 0.202,
+  "MDY": 0.196,
+  "IJR": 0.196,
+  "XLU": 0.177,
+  "IGV": 0.161,
+  "XLF": 0.155,
+  "XLB": 0.143,
+  "XLC": 0.09,
+  "XLI": 0.087,
+  "XLP": 0.078,
+  "XLRE": 0.04
+ },
+ "spy_above_50d": false,
+ "qqq_above_50d": false,
+ "as_of": "2026-11-06"
+}
