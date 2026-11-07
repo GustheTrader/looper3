@@ -124,15 +124,18 @@ FIXED_MARGIN = {"w_btc_tilt": 1.0, "w_eth_tilt": 1.0,          # crypto: outside
                 "w_trend_hard": 0.08,                          # futures initial margin
                 "w_psc_gld": 0.06}                             # defined-risk put spread: spread width
 ETF_SLEEVES = ["w_hard_rotation", "w_space"]                   # ETFs: deck haircut by VIX regime
-# trading sleeves: VIX futures (15% x 0.5 notional x 20% margin), momentum L/S legs (5% x 2 x 15%), prediction stakes (5% x 20%)
-TRADING_MARGIN_STATIC = 0.15 * 0.5 * 0.20 + 0.05 * 2 * 0.15 + 0.05 * 0.2
-CARRY_WEIGHT = 0.10
+_WC = HERE / "results" / "WEIGHTS_choice.json"
+W_TR = json.loads(_WC.read_text())["weights"] if _WC.exists() else {"vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05, "ff_calendars": 0.0}
+# per $ of sleeve: VIX futures 0.5 notional x 20% margin; momentum L/S 2 legs x 15%; prediction stakes 20%
+TRADING_MARGIN_STATIC = W_TR["vix_fade"] * 0.5 * 0.20 + W_TR["momentum_ls"] * 2 * 0.15 + W_TR["prediction"] * 0.2
 
 
 def trading_margin(D):
-    """Daily trading-sleeve margin: static part + the carry sleeve, whose spot crypto is fully funded while it is on."""
+    """Daily trading-sleeve margin: static part + carry (spot crypto fully funded while on) + FF calendars
+    (debits are fully paid: margin = open calendar value / sleeve equity, from the replay)."""
     on = D["carry_on"] if "carry_on" in D else 0.0
-    return TRADING_MARGIN_STATIC + CARRY_WEIGHT * on
+    ffx = D["ff_exposure"] if "ff_exposure" in D else 0.0
+    return TRADING_MARGIN_STATIC + W_TR["carry"] * on + W_TR.get("ff_calendars", 0.0) * ffx
 
 
 def utilisation(D, vix, L, hedged, trading_k=1.0):

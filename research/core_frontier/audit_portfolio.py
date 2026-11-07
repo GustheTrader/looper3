@@ -7,7 +7,7 @@ daily series) and compares. Nothing here is imported from the scripts it audits 
   D  data      freshness of every input, T-bill series vs French monthly, CF rf vs the T-bill file
   C  carry     sleeve rebuilt from the HOURLY Deribit files with a different aggregation; look-ahead test
   P  portfolio daily identity (weights x sleeves), monthly compounding, headline statistics recomputed
-  L  layers    trading-sleeve layer at k=1 equals the portfolio; margin-capped 1.75x layer rebuilt
+  L  layers    trading-sleeve layer at k=1 equals the portfolio; recommended margin-capped layer rebuilt
                (own margin model + own leverage rule) and compared; how often margin ended above 70%
   G  page      numbers embedded in core_frontier.html equal the result files; no unfilled placeholders
 Writes results/AUDIT_portfolio.json and prints PASS / FAIL lines.
@@ -118,11 +118,12 @@ def carry_checks(D, rf):
 
 # ------------------------------------------------------------------ P. portfolio
 def portfolio_checks(D, rf):
-    W = {"core": 0.65, "vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05}
+    WC = json.loads((RES / "WEIGHTS_choice.json").read_text())
+    W = WC["weights"]
     rec = sum(W[k] * D[k] for k in W)
     e = float((rec - D.portfolio).abs().max())
-    check("P1", "portfolio = 65% core + 15% VIX fade + 10% carry + 5% momentum + 5% prediction", e < 1e-14, f"max daily diff {e:.1e}")
-    e2 = float(((rec - 0.65 * D.core) / 0.35 - D.trading).abs().max())
+    check("P1", "portfolio = weights x sleeves", e < 1e-14, ", ".join(f"{k} {v:.0%}" for k, v in W.items()) + f"; max daily diff {e:.1e}")
+    e2 = float(((rec - W["core"] * D.core) / (1 - W["core"]) - D.trading).abs().max())
     check("P2", "trading bucket = the four trading sleeves / 35%", e2 < 1e-13, f"max diff {e2:.1e}")
     check("P3", "no missing values in the sleeves", not D[list(W) + ["rf"]].isna().any().any(), f"{len(D)} days {D.index[0].date()} .. {D.index[-1].date()}")
     M = pd.read_csv(RES / "CF_monthly.csv", index_col=0, parse_dates=True)
@@ -170,32 +171,75 @@ def layer_checks(D, rf):
     vix = pd.read_csv(LVD / "vol_index_d.csv", index_col=0, parse_dates=True)["^VIX"].reindex(D.index).ffill() / 100
     hc = np.select([vix < 0.20, vix < 0.30, vix < 0.50], [0.275, 0.36, 0.475], 0.65)
     core_m = D.w_btc_tilt * 1.0 + D.w_eth_tilt * 1.0 + D.w_trend_hard * 0.08 + D.w_psc_gld * 0.06 + (D.w_hard_rotation + D.w_space) * hc
-    trade_m = 0.15 * 0.5 * 0.20 + 0.05 * 2 * 0.15 + 0.05 * 0.20 + 0.10 * D.carry_on
+    W = json.loads((RES / "WEIGHTS_choice.json").read_text())["weights"]
+    trade_m = W["vix_fade"] * 0.5 * 0.20 + W["momentum_ls"] * 2 * 0.15 + W["prediction"] * 0.20 + W["carry"] * D.carry_on + W["ff_calendars"] * D.ff_exposure
     u = 0.65 * core_m + trade_m
     vix_y = vix.shift(1).bfill()                                   # sizing uses yesterday's VIX for the haircut
     hc_y = np.select([vix_y < 0.20, vix_y < 0.30, vix_y < 0.50], [0.275, 0.36, 0.475], 0.65)
     core_y = D.w_btc_tilt + D.w_eth_tilt + D.w_trend_hard * 0.08 + D.w_psc_gld * 0.06 + (D.w_hard_rotation + D.w_space) * hc_y
-    L = np.minimum(1.75, 0.70 / (0.65 * core_y + trade_m))
+    rec = json.loads((RES / "FL_summary.json").read_text())["chosen_by_design_calmar"]
+    LT = float(rec.split("target ")[1].split("x")[0])
+    L = np.minimum(LT, 0.70 / (0.65 * core_y + trade_m))
     r = D.rf + L * (D.portfolio - D.rf) - np.maximum(L - 1, 0) * 0.005 / 252
-    fl = pd.DataFrame(json.loads((RES / "FL_summary.json").read_text())["rows"]).set_index("key").loc["target 1.75x | crypto via spot"]
+    fl = pd.DataFrame(json.loads((RES / "FL_summary.json").read_text())["rows"]).set_index("key").loc[rec]
     t = r.loc["2021-01-01":]
     eq = (1 + t).cumprod()
     mine = {"test_cagr": float(eq.iloc[-1] ** (252 / len(t)) - 1), "test_max_dd": float((eq / eq.cummax() - 1).min()), "avg_lev": float(L.mean())}
     worst = max(abs(mine[k] - fl[k]) for k in mine)
-    check("L2", "1.75x margin-capped layer rebuilt independently", worst < 1e-9,
+    check("L2", f"recommended {LT:g}x margin-capped layer rebuilt independently", worst < 1e-9,
           f"test CAGR {mine['test_cagr']:.4%} / DD {mine['test_max_dd']:.2%} / avg lev {mine['avg_lev']:.3f}× vs published "
           f"{fl.test_cagr:.4%} / {fl.test_max_dd:.2%} / {fl.avg_lev:.3f}× | max diff {worst:.1e}")
     real = L * u
     over = float((real > 0.70 + 1e-12).mean())
     hi = real[real > 0.80]
     jumps = all(vix.shift(1)[d] < 0.50 <= vix[d] for d in hi.index)
+    tail_ = ("Each time VIX crossed 50 intraday and the haircut stepped up; the de-lever-at-80% rule would act intraday, "
+             "which the backtest does not model.") if len(hi) else "Never above 80%."
     check("L3", "margin above the deck's 80% de-lever line only when VIX jumped past 50 within the day", jumps,
-          f"ended above 70% on {over:.1%} of days; above 80% on {len(hi)} days ({', '.join(f'{d.date()} {v:.1%}' for d, v in hi.items()) or 'none'}), "
-          f"each when VIX crossed 50 intraday and the haircut stepped up. The de-lever-at-80% rule would act intraday; the backtest does not model that.", note=True)
-    carry_m = 0.10 * D.carry_on
-    check("L4", "carry sleeve's margin counted", float(carry_m.max()) <= 0.10 + 1e-12,
-          f"adds {carry_m.mean():.2%} of the account on average (10% when fully on, 0 when in T-bills)")
-    return mine
+          f"ended above 70% on {over:.1%} of days; above 80% on {len(hi)} days ({', '.join(f'{d.date()} {v:.1%}' for d, v in hi.items()) or 'none'}). " + tail_,
+          note=len(hi) > 0)
+
+
+# ------------------------------------------------------------------ W/F/V/K. weights, FF, VIX, decay
+def new_sleeve_checks(D):
+    WC = json.loads((RES / "WEIGHTS_choice.json").read_text())
+    g = pd.DataFrame(WC["candidates"]).set_index("name")
+    W = WC["weights"]
+    ok = (g.design_calmar.idxmax() == WC["chosen"]) and abs(sum(W.values()) - 1) < 1e-12
+    check("W1", "weights = best 2015-20 Calmar among the candidates (test period not used)", ok,
+          f"chosen {WC['chosen']} (2015-20 Calmar {g.loc[WC['chosen'], 'design_calmar']:.2f}; next best {g.design_calmar.drop(WC['chosen']).max():.2f}); "
+          f"2021-26 Calmar {g.loc[WC['chosen'], 'test_calmar']:.2f} vs {g.loc['W0 current (no FF)', 'test_calmar']:.2f} without FF")
+    ffd = pd.read_csv(RES / "FFA_daily.csv", index_col=0, parse_dates=True)[WC["ff_series"]].reindex(D.index)
+    e = float((D.ff_calendars - ffd.fillna(D.rf)).abs().max())
+    check("F1", "FF sleeve = deck replay with master execution", e < 1e-15, f"series '{WC['ff_series']}', max diff {e:.1e}")
+    vol = pd.read_csv(LVD / "vol_index_d.csv", index_col=0, parse_dates=True)
+    worst = 0.0
+    for col, sym in [("^VIX", "VIX"), ("^VIX3M", "VIX3M"), ("^VVIX", "VVIX")]:
+        c = pd.read_csv(DATA / "cboe" / f"{sym}.csv")
+        c.index = pd.to_datetime(c.iloc[:, 0], format="%m/%d/%Y")
+        c = pd.to_numeric(c.iloc[:, -1], errors="coerce").dropna()
+        common = vol.index.intersection(c.index)
+        worst = max(worst, float((vol.loc[common, col] - c.loc[common]).abs().max()))
+    n_corr = len(pd.read_csv(LVD / "cboe_corrections.csv"))
+    check("V1", "VIX / VIX3M / VVIX = CBOE official closes", worst < 1e-9, f"max diff {worst:.1e}; {n_corr} Yahoo values replaced (e.g. 2026-02-06 VIX 20.37 -> 17.76)")
+    VV = json.loads((RES / "VV_summary.json").read_text())
+    m_, r_ = VV["V3_fade_vs_SVXY"]["model"], VV["V3_fade_vs_SVXY"]["real_svxy"]
+    check("V2", "VIX fade model vs the same days traded with real SVXY (-0.5x)", abs(m_["cagr"] - r_["cagr"]) < 0.01,
+          f"CAGR {m_['cagr']:.2%} model vs {r_['cagr']:.2%} real; max DD {m_['max_dd']:.1%} vs {r_['max_dd']:.1%}; per-trade correlation {VV['V4_trades']['corr']:.2f}")
+    v2 = VV["V2_futures_model"]["VIXY"]
+    check("V3", "VIX-futures model vs real VIXY", v2["corr"] > 0.9,
+          f"daily correlation {v2['corr']:.2f}; CAGR {v2['cagr_model']:.1%} model vs {v2['cagr_real']:.1%} real; real moves {v2['beta_real_on_model']:.2f}x the model (the model is more volatile)", note=True)
+    T = pd.read_csv(RES / "DECAY_trades.csv", parse_dates=["entry", "exit"])
+    bad = int((T.ret < -1 - 1e-12).sum())
+    check("K1", "decay put spreads never lose more than the debit", bad == 0, f"{len(T)} simulated trades, min return {T.ret.min():.1%}")
+    import study_decay as sd
+    px = sd.load()
+    vol2 = vol
+    S_, _, _, _ = sd.signals(px.reindex(vol2.index[vol2.index >= "2011-01-01"]), vol2)
+    t = T[T.key == "C master protocol"].iloc[0]
+    prev = S_.index[S_.index.get_loc(t.entry) - 1]
+    check("K2", "decay entries fill the day after the signal", bool(S_.at[prev, t.tk]),
+          f"first trade {t.tk}: signal on {prev.date()}, filled {t.entry.date()}")
 
 
 # ------------------------------------------------------------------ G. page
@@ -221,6 +265,7 @@ def main():
     carry_checks(D, rf)
     res = portfolio_checks(D, rf)
     layer_checks(D, rf)
+    new_sleeve_checks(D)
     page_checks()
     n_fail = sum(c["status"] == "FAIL" for c in checks)
     n_note = sum(c["status"] == "NOTE" for c in checks)

@@ -24,7 +24,7 @@ import study_margin as sm
 
 HERE = Path(__file__).parent
 OUT = HERE / "results"
-W = {"vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05}   # must match study_portfolio.WEIGHTS
+W = {k: v for k, v in sm.W_TR.items() if k != "core"}          # same weights as study_portfolio (WEIGHTS_choice.json)
 
 
 def build(D, k, fade_cap=4 / 3):

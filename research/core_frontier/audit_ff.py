@@ -175,16 +175,29 @@ def deck_replay(universes=None):
         ffs[k] = f2.fwd_ff(cv.a, 30, cv.b, 93)
     FF = pd.DataFrame(ffs).reindex(days)
     PX = close[["SPY"] + list(vols)].reindex(days).ffill()
+    # live-measured at-the-money half-spreads (mean of the 30d and 90d legs) from the chain check, where available
+    live_hs = {}
+    try:
+        rows_ = json.loads((OUT / "FFA_summary.json").read_text())["C_live"]["rows"]
+        live_hs = {k: 0.5 * (v["half_spread_30"] + v["half_spread_90"]) for k, v in rows_.items() if "half_spread_30" in v}
+    except Exception:  # noqa: BLE001
+        pass
+    band = lambda v: 1 if v < 0.25 else 2 if v < 0.40 else 3
+    old_tbl = lambda k, v: f2.half_spread("SPX" if k == "SPY" else k if k in f2.COSTS["realistic"] else "EEM", "realistic", v)
+    meas = lambda k, v: live_hs[k] * band(v) if k in live_hs else old_tbl(k, v)
     costs = {"zero": lambda k, v: 0.0,
-             "realistic": lambda k, v: f2.half_spread("SPX" if k == "SPY" else k if k in f2.COSTS["realistic"] else "EEM", "realistic", v),
+             "realistic": meas,                                   # live-measured spreads, x2 / x3 in stressed markets
+             "master": lambda k, v: 0.3 * meas(k, v),             # each calendar worked as ONE combo limit order: 30% of the spread
+             "earlier cost table": old_tbl,
              "deck frictions (20-30% bid/ask at panic)": lambda k, v: (0.005 if v < 0.25 else 0.02 if v < 0.40 else 0.125) * (1 if k in ("SPY", "QQQ", "IWM", "DIA") else 1.5)}
     size = lambda v: 0.04 if v < 0.20 else 0.06 if v < 0.25 else 0.08 if v < 0.30 else 0.10
-    out, daily, trades_out = {}, {}, {}
+    out, daily, trades_out, exposure = {}, {}, {}, {}
     universes = universes or {"deck core: SPY QQQ IWM DIA": ["SPY", "QQQ", "IWM", "DIA"],
                               "extended: + GLD SLV TLT EEM EWZ FXI": ["SPY", "QQQ", "IWM", "DIA", "GLD", "SLV", "TLT", "EEM", "EWZ", "FXI"]}
     for (uname, uni), variant in [(u, v) for u in universes.items() for v in ["deck rules", "deck rules, hold to 7 days left (no FF exit)"]]:
         for cname, cfun in costs.items():
             maxpos = 0
+            expo_ = {}
             cash, pos, curve, trades = 1.0, [], {}, []
             for t in days:
                 v = float(vix.get(t, np.nan))
@@ -236,11 +249,13 @@ def deck_replay(universes=None):
                 cash *= np.exp(r / 252)
                 maxpos = max(maxpos, len(pos))
                 curve[t] = cash + sum(p["mark"] for p in pos)
+                expo_[t] = sum(p["mark"] for p in pos) / curve[t] if curve[t] > 0 else 0.0
             e = pd.Series(curve)
             rr = e.pct_change().fillna(0)
             tr = pd.DataFrame(trades)
             key = f"{uname} | {variant} | {cname}"
             daily[key] = rr
+            exposure[key] = pd.Series(expo_)
             mo = (1 + rr).resample("ME").prod() - 1
             yr = (1 + rr).groupby(rr.index.year).prod() - 1
             exr = rr - rf.reindex(rr.index).fillna(0) / 252
@@ -259,6 +274,7 @@ def deck_replay(universes=None):
             trades_out[key] = tr
     share = {k: float((FF[k] > 0.20).mean()) for k in FF.columns}
     pd.DataFrame(daily).to_csv(OUT / "FFA_daily.csv")
+    pd.DataFrame(exposure).to_csv(OUT / "FFA_exposure.csv")       # open calendar value / sleeve equity (for margin use)
     pd.concat([t.assign(key=k) for k, t in trades_out.items() if len(t)], ignore_index=True).to_csv(OUT / "FFA_trades.csv", index=False)
     return out, share
 

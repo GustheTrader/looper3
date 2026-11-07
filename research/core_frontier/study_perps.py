@@ -144,12 +144,13 @@ def main():
     pick = ok.sort_values("design_calmar", ascending=False).iloc[0]["key"]
     ok_full = g[g.full_worst_year >= -0.15]
     max_cagr = ok_full.sort_values("full_cagr", ascending=False).iloc[0]["key"]
-    prev_pick = "spot (as published) | margin 100% | target 1.75x"
+    L_REC = float(json.loads((OUT / "FL_summary.json").read_text())["chosen_by_design_calmar"].split("target ")[1].split("x")[0])
+    prev_pick = f"spot (as published) | margin 100% | target {L_REC}x"
     liq = drops()
 
-    # ---------- E. the 10% slot: carry (published) vs the FF calendars it replaced
+    # ---------- E. the published trading mix vs the previous one (carry 10%, no FF, prediction 5%)
     carry_full = D.carry
-    swap_port = D.portfolio + 0.10 * (D.ff_calendars - D.carry)
+    swap_port = 0.65 * D.core + 0.15 * D.vix_fade + 0.10 * D.carry + 0.05 * D.momentum_ls + 0.05 * D.prediction
     hl = {}
     for k in ["btc", "eth"]:
         f = F[f"hl_{k}"]
@@ -158,12 +159,12 @@ def main():
         hl[k] = rf + on * (f.fillna(rf) - rf) - on.diff().abs().fillna(0) * CARRY_COST
     hl_sleeve = (0.5 * hl["btc"] + 0.5 * hl["eth"]).loc["2023-06-01":]       # same rule on Hyperliquid funding (comparison only)
     swaps = {}
-    for name, r0 in {"65/35 with FF calendars in the 10% slot (previous)": swap_port, "65/35 with carry in the 10% slot (published)": D.portfolio}.items():
-        for L in [1.0, 1.75]:
+    for name, r0 in {"previous mix (carry 10%, no FF)": swap_port, "published mix": D.portfolio}.items():
+        for L in [1.0, L_REC]:
             r, lev, util = run(r0, L, 1.0)
             swaps[f"{name} | target {L}x"] = {p: sm.metrics(r.loc[sl], rfD.loc[sl]) for p, sl in
                                               {"design": slice(None, "2020-12-31"), "test": slice("2021-01-01", None), "full": slice(None, None)}.items()}
-            if "published" in name and L == 1.75:
+            if name == "published mix" and L == L_REC:
                 keep["carry_swap_175"] = (r, lev, util)
     hl_tab = sm.metrics(hl_sleeve, rf.reindex(hl_sleeve.index))
     der_same = sm.metrics(carry_sleeve.loc["2023-06-01":], rf.reindex(carry_sleeve.loc["2023-06-01":].index))
@@ -173,7 +174,7 @@ def main():
     yr = lambda r: {int(a): float(b) for a, b in ((1 + r).groupby(r.index.year).prod() - 1).items()}
     out = {"funding": facts, "sleeves": sleeve_tab, "carry_sleeve": carry_tab, "carry_on_pct": carry_on_pct,
            "carry_yearly": {int(a): float(b) for a, b in carry_year.items()}, "tbill_yearly": {int(a): float(b) for a, b in tb_year.items()},
-           "grid": g.to_dict("records"), "ff_swap": swaps, "carry_hl_2023": hl_tab, "carry_deribit_2023": der_same,
+           "grid": g.to_dict("records"), "ff_swap": swaps, "L_rec": L_REC, "carry_hl_2023": hl_tab, "carry_deribit_2023": der_same,
            "carry_corr_core": corr_carry, "pick_by_design_calmar": pick, "max_cagr_meeting_rule": max_cagr, "previous_pick": prev_pick,
            "liquidation": liq, "yearly_pick": yr(r_pick), "yearly_prev": yr(keep[prev_pick][0]),
            "unlevered": {n: {p: sm.metrics(v.loc[sl], rfD.loc[sl]) for p, sl in {"test": slice("2021-01-01", None), "full": slice(None, None)}.items()}

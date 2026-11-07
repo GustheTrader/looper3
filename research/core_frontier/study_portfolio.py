@@ -8,9 +8,9 @@ levered to a 40% volatility target (cap 6x), crypto capped. (research/leaps_vix/
 
 Trading sleeves (35%):
   15%  VIX spike fade   short VIX futures (0.5x) after a spike has peaked     (validated on SVXY)
-  10%  Funding carry    long spot / short perp BTC+ETH, on while funding beats T-bills by 2%/yr (study_carry.py);
-                        T-bills before 2019-05 (no funding history)
-   0%  FF calendars     tracked only (paper pilot): deck-faithful replay on SPY/QQQ/IWM/DIA (audit_ff.py)
+  weights of the trading sleeves come from results/WEIGHTS_choice.json (study_weights.py, chosen on 2015-20 only):
+       VIX fade, funding carry (study_carry.py; T-bills before 2019-05), FF calendars (deck replay on SPY/QQQ/IWM/DIA
+       with master execution, audit_ff.py), momentum L/S, prediction pilot (T-bills)
    5%  Momentum L/S     market-neutral CRSP momentum, scaled to 12% volatility
    5%  Prediction model 15-minute BTC up/down markets, KC dip-buy (study_pm.py) -- PILOT:
                         no long history, held as T-bills in this backtest
@@ -36,8 +36,10 @@ import momentum_lib as ml  # noqa: E402
 
 OUT = HERE / "results"
 START, END = "2015-10-01", None      # END = None: run to the last date in the data (no hard-coded end)
-WEIGHTS = {"core": 0.65, "vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05}
-TRACKED = ["ff_calendars"]          # computed and reported, 0% weight
+_WC = HERE / "results" / "WEIGHTS_choice.json"          # chosen on 2015-20 only by study_weights.py
+WEIGHTS = (json.loads(_WC.read_text())["weights"] if _WC.exists()
+           else {"core": 0.65, "vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05, "ff_calendars": 0.0})
+FF_KEY = "deck core: SPY QQQ IWM DIA | deck rules | master"   # FF calendars, deck rules, master execution (audit_ff.py)
 
 
 def monthly(r):
@@ -58,10 +60,15 @@ def main():
     idx = core.index
 
     # ---------- trading sleeves (total returns, idle cash in T-bills)
-    fade = (rf + fade_ex).reindex(idx)
+    # VIX-futures round-trip cost (validate_vix.py V6): 0.25% of notional per side x 0.5 notional, on each entry and exit
+    import study_vix as _sv
+    _, fpos = _sv.v3_fade(_sv.panel(ol.load_market()))
+    fade_cost = fpos.astype(float).diff().abs().fillna(0) * 0.0025 * 0.5
+    fade = (rf + fade_ex - fade_cost.reindex(fade_ex.index).fillna(0)).reindex(idx)
     # FF sleeve = the deck-faithful replay validated in audit_ff.py: SPY/QQQ/IWM/DIA, FF > 0.20, VIX-band size,
     # many concurrent positions, 20% reserve, exit at FF < 0.15 or 7 days left, realistic bid/ask
-    ff = pd.read_csv(OUT / "FFA_daily.csv", index_col=0, parse_dates=True)["deck core: SPY QQQ IWM DIA | deck rules | realistic"]
+    ff = pd.read_csv(OUT / "FFA_daily.csv", index_col=0, parse_dates=True)[FF_KEY]
+    ff_expo = pd.read_csv(OUT / "FFA_exposure.csv", index_col=0, parse_dates=True)[FF_KEY].reindex(idx).fillna(0.0)
     ff = (ff + 0.0).reindex(idx)
     ff = ff.fillna(rf.reindex(idx))
     dec = pd.read_csv(ml.DATA / "mom10_d.csv", index_col=0, parse_dates=True)
@@ -77,7 +84,7 @@ def main():
                             "ff_calendars": ff}).loc[START:END]
     assert abs(sum(WEIGHTS.values()) - 1) < 1e-12 and not sleeves[list(WEIGHTS)].isna().any().any(), "weights or sleeve gaps"
     tot = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS)
-    trade_bucket = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS if k != "core") / 0.35
+    trade_bucket = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS if k != "core") / (1 - WEIGHTS["core"])
 
     # ---------- benchmarks
     R = px.pct_change(fill_method=None)
@@ -172,7 +179,7 @@ def main():
                           "core_crypto_w": (core_W["btc_tilt"] + core_W["eth_tilt"]).loc[START:END],
                           "core_gross": core_W.abs().sum(axis=1).loc[START:END],
                           "vix_fade": sleeves.vix_fade, "carry": sleeves.carry, "carry_on": carry.carry_on.reindex(sleeves.index),
-                          "ff_calendars": sleeves.ff_calendars,
+                          "ff_calendars": sleeves.ff_calendars, "ff_exposure": ff_expo.reindex(sleeves.index),
                           "momentum_ls": sleeves.momentum_ls, "prediction": sleeves.prediction}
                          | {f"w_{c}": core_W[c].loc[START:END] for c in core_W.columns})
     daily.to_csv(OUT / "CF_daily.csv")

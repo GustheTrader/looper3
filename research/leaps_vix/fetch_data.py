@@ -50,9 +50,33 @@ def main():
         h.to_csv(DATA / "hard_assets_adj_d.csv")
         s = yf.download("SPCX", start="2026-01-01", auto_adjust=True, progress=False)["Close"]   # SpaceX, listed 2026-06-12
         (s.iloc[:, 0] if hasattr(s, "columns") else s).rename("SPCX").to_frame().to_csv(DATA / "spcx_d.csv")
+    apply_cboe_official()
     for f in DATA.glob("*.csv"):
         x = pd.read_csv(f, index_col=0, parse_dates=True)
         print(f.name, x.shape, x.index[0].date(), x.index[-1].date())
+
+
+def apply_cboe_official():
+    """Replace Yahoo's ^VIX / ^VIX3M / ^VVIX closes with CBOE's official daily closes wherever CBOE has the day.
+    Yahoo had corrupted rows (e.g. 2026-02-06 ^VIX = 20.37, a copy of that day's VIX3M; CBOE close 17.76)."""
+    import io
+    import urllib.request
+    f = DATA / "vol_index_d.csv"
+    vol = pd.read_csv(f, index_col=0, parse_dates=True)
+    log = []
+    for col, sym in [("^VIX", "VIX"), ("^VIX3M", "VIX3M"), ("^VVIX", "VVIX")]:
+        with urllib.request.urlopen(f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{sym}_History.csv", timeout=60) as r:
+            c = pd.read_csv(io.BytesIO(r.read()))
+        c.index = pd.to_datetime(c.iloc[:, 0], format="%m/%d/%Y")
+        c = pd.to_numeric(c.iloc[:, -1], errors="coerce").dropna()
+        common = vol.index.intersection(c.index)
+        diff = (vol.loc[common, col] - c.loc[common]).abs()
+        for d in diff[diff > 0.005].index:
+            log.append({"series": col, "date": str(d.date()), "yahoo": float(vol.at[d, col]), "cboe": float(c[d])})
+        vol.loc[common, col] = c.loc[common]
+    vol.to_csv(f)
+    pd.DataFrame(log).to_csv(DATA / "cboe_corrections.csv", index=False)
+    print("CBOE official closes applied;", len(log), "cells corrected")
 
 
 if __name__ == "__main__":

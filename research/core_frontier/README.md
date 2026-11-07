@@ -49,3 +49,14 @@ uses the deck replay (`FFA_daily.csv`, realistic costs).
 Re-run order: `fetch_perps.py`, `../momentum/fetch_data.py rf`, `study_carry.py`, `study_ff.py`, `study_ff2.py`,
 `audit_ff.py`, `study_portfolio.py`, `study_margin.py`, `study_capital_layer.py`, `study_final_layer.py`,
 `study_perps.py`, `build_cf_page.py`, `audit_portfolio.py`, `build_cf_page.py`.
+
+## FF back in (master execution), structural decay, VIX validation, execution desk
+
+* `validate_vix.py`: VIX inputs vs CBOE official files, VIX-futures model vs real VIXY/VXX, the fade on real SVXY
+  (scaled for its 2018 change from -1x to -0.5x), per-trade comparison, look-ahead and cost checks. The fade now
+  pays VIX-futures costs. `leaps_vix/fetch_data.apply_cboe_official` replaces Yahoo's VIX/VIX3M/VVIX with CBOE's closes.
+* `study_decay.py`: the PTG structural-decay deck (put spreads on decaying leveraged ETPs), calibrated to live chains
+  (`live_chains.py`). The decay is real but the trade fails after costs out of sample, so it is not funded.
+* `audit_ff.py`: FF replay with live-measured spreads and a "master" execution mode (one combo order, 30% of the spread).
+* `study_weights.py`: trading-sleeve weights chosen on 2015-20 only -> `WEIGHTS_choice.json` (read by every script).
+* `desk.py`: today's tickets from real chains (FF calendars, VIX fade state, carry state, decay paper signals).

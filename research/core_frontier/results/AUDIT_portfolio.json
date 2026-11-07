@@ -72,17 +72,17 @@
   },
   {
    "id": "P1",
-   "check": "portfolio = 65% core + 15% VIX fade + 10% carry + 5% momentum + 5% prediction",
+   "check": "portfolio = weights x sleeves",
    "status": "PASS",
    "pass": true,
-   "detail": "max daily diff 1.4e-16"
+   "detail": "core 65%, vix_fade 15%, carry 5%, ff_calendars 10%, momentum_ls 5%, prediction 0%; max daily diff 1.6e-16"
   },
   {
    "id": "P2",
    "check": "trading bucket = the four trading sleeves / 35%",
    "status": "PASS",
    "pass": true,
-   "detail": "max diff 1.1e-16"
+   "detail": "max diff 1.2e-16"
   },
   {
    "id": "P3",
@@ -96,70 +96,112 @@
    "check": "monthly series = compounded daily returns",
    "status": "PASS",
    "pass": true,
-   "detail": "max diff 1.5e-15"
+   "detail": "max diff 1.6e-15"
   },
   {
    "id": "P5a",
    "check": "headline stats recomputed (2015-26)",
    "status": "PASS",
    "pass": true,
-   "detail": "cagr 0.3198 sharpe 1.2689 max_dd -0.1905 ann_vol 0.2222 worst_year -0.0686 | max diff 1.3e-15"
+   "detail": "cagr 0.3250 sharpe 1.2961 max_dd -0.1904 ann_vol 0.2203 worst_year -0.0512 | max diff 4.2e-15"
   },
   {
    "id": "P6a",
    "check": "CAGR bias from the partial last month is small",
    "status": "NOTE",
    "pass": true,
-   "detail": "month-count CAGR 31.98% vs exact-time CAGR 32.20%: the page counts the partial November as a full month, so its CAGRs are slightly low"
+   "detail": "month-count CAGR 32.50% vs exact-time CAGR 32.72%: the page counts the partial November as a full month, so its CAGRs are slightly low"
   },
   {
    "id": "P5b",
    "check": "headline stats recomputed (2021-26 test)",
    "status": "PASS",
    "pass": true,
-   "detail": "cagr 0.2173 sharpe 0.8658 max_dd -0.1905 ann_vol 0.2189 worst_year -0.0337 | max diff 1.1e-15"
+   "detail": "cagr 0.2151 sharpe 0.8593 max_dd -0.1904 ann_vol 0.2184 worst_year -0.0343 | max diff 3.8e-15"
   },
   {
    "id": "P6b",
    "check": "CAGR bias from the partial last month is small",
    "status": "NOTE",
    "pass": true,
-   "detail": "month-count CAGR 21.73% vs exact-time CAGR 22.01%: the page counts the partial November as a full month, so its CAGRs are slightly low"
+   "detail": "month-count CAGR 21.51% vs exact-time CAGR 21.79%: the page counts the partial November as a full month, so its CAGRs are slightly low"
   },
   {
    "id": "P7",
    "check": "daily vs month-end drawdown reported",
    "status": "NOTE",
    "pass": true,
-   "detail": "2021-26 max DD month-end -19.05% vs daily -23.02% (page labels each)"
+   "detail": "2021-26 max DD month-end -19.04% vs daily -23.01% (page labels each)"
   },
   {
    "id": "L1",
    "check": "trading-sleeve layer at 1x reproduces the portfolio",
    "status": "PASS",
    "pass": true,
-   "detail": "max diff 1.4e-16"
+   "detail": "max diff 1.6e-16"
   },
   {
    "id": "L2",
-   "check": "1.75x margin-capped layer rebuilt independently",
+   "check": "recommended 1.5x margin-capped layer rebuilt independently",
    "status": "PASS",
    "pass": true,
-   "detail": "test CAGR 23.7592% / DD -29.32% / avg lev 1.215\u00d7 vs published 23.7592% / -29.32% / 1.215\u00d7 | max diff 0.0e+00"
+   "detail": "test CAGR 24.3117% / DD -30.53% / avg lev 1.221\u00d7 vs published 24.3117% / -30.53% / 1.221\u00d7 | max diff 0.0e+00"
   },
   {
    "id": "L3",
    "check": "margin above the deck's 80% de-lever line only when VIX jumped past 50 within the day",
-   "status": "NOTE",
-   "pass": true,
-   "detail": "ended above 70% on 4.4% of days; above 80% on 2 days (2020-03-11 80.4%, 2025-04-08 80.2%), each when VIX crossed 50 intraday and the haircut stepped up. The de-lever-at-80% rule would act intraday; the backtest does not model that."
-  },
-  {
-   "id": "L4",
-   "check": "carry sleeve's margin counted",
    "status": "PASS",
    "pass": true,
-   "detail": "adds 2.62% of the account on average (10% when fully on, 0 when in T-bills)"
+   "detail": "ended above 70% on 4.0% of days; above 80% on 0 days (none). Never above 80%."
+  },
+  {
+   "id": "W1",
+   "check": "weights = best 2015-20 Calmar among the candidates (test period not used)",
+   "status": "PASS",
+   "pass": true,
+   "detail": "chosen W3 FF 10%, carry 5% (2015-20 Calmar 4.32; next best 4.32); 2021-26 Calmar 1.13 vs 1.13 without FF"
+  },
+  {
+   "id": "F1",
+   "check": "FF sleeve = deck replay with master execution",
+   "status": "PASS",
+   "pass": true,
+   "detail": "series 'deck core: SPY QQQ IWM DIA | deck rules | master', max diff 3.4e-21"
+  },
+  {
+   "id": "V1",
+   "check": "VIX / VIX3M / VVIX = CBOE official closes",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max diff 0.0e+00; 37 Yahoo values replaced (e.g. 2026-02-06 VIX 20.37 -> 17.76)"
+  },
+  {
+   "id": "V2",
+   "check": "VIX fade model vs the same days traded with real SVXY (-0.5x)",
+   "status": "PASS",
+   "pass": true,
+   "detail": "CAGR 6.47% model vs 6.27% real; max DD -22.2% vs -19.7%; per-trade correlation 0.98"
+  },
+  {
+   "id": "V3",
+   "check": "VIX-futures model vs real VIXY",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "daily correlation 0.95; CAGR -47.2% model vs -47.9% real; real moves 0.76x the model (the model is more volatile)"
+  },
+  {
+   "id": "K1",
+   "check": "decay put spreads never lose more than the debit",
+   "status": "PASS",
+   "pass": true,
+   "detail": "2613 simulated trades, min return -100.0%"
+  },
+  {
+   "id": "K2",
+   "check": "decay entries fill the day after the signal",
+   "status": "PASS",
+   "pass": true,
+   "detail": "first trade SPXU: signal on 2011-07-11, filled 2011-07-12"
   },
   {
    "id": "G1",
@@ -173,17 +215,17 @@
    "check": "page statistics = CF_summary.json",
    "status": "PASS",
    "pass": true,
-   "detail": "test CAGR on page 21.7283%"
+   "detail": "test CAGR on page 21.5143%"
   },
   {
    "id": "G3",
    "check": "prose figures come from the facts table",
    "status": "PASS",
    "pass": true,
-   "detail": "64 figures filled at build time"
+   "detail": "98 figures filled at build time"
   }
  ],
- "n_checks": 26,
+ "n_checks": 32,
  "n_fail": 0,
  "n_note": 6
 }
