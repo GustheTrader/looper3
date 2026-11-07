@@ -1,0 +1,120 @@
+{
+  "as_of": "2026-10-31",
+  "spdr_etf_spsr": {
+    "XLE": {
+      "spsr": 100.0,
+      "ret_9m": 0.3988
+    },
+    "XLK": {
+      "spsr": 90.9,
+      "ret_9m": 0.2521
+    },
+    "XLV": {
+      "spsr": 81.8,
+      "ret_9m": 0.2095
+    },
+    "XLP": {
+      "spsr": 72.7,
+      "ret_9m": 0.0914
+    },
+    "XLB": {
+      "spsr": 63.6,
+      "ret_9m": 0.0842
+    },
+    "XLF": {
+      "spsr": 54.5,
+      "ret_9m": 0.0704
+    },
+    "XLRE": {
+      "spsr": 45.5,
+      "ret_9m": 0.0671
+    },
+    "XLU": {
+      "spsr": 36.4,
+      "ret_9m": 0.0251
+    },
+    "XLI": {
+      "spsr": 27.3,
+      "ret_9m": 0.0199
+    },
+    "XLY": {
+      "spsr": 18.2,
+      "ret_9m": -0.0419
+    },
+    "XLC": {
+      "spsr": 9.1,
+      "ret_9m": -0.1605
+    }
+  },
+  "ff49_as_of": "2026-09-30",
+  "ff49_top8": {
+    "Hardw": 100.0,
+    "Chips": 98.0,
+    "ElcEq": 95.9,
+    "Oil": 93.9,
+    "Mach": 91.8,
+    "Smoke": 89.8,
+    "Drugs": 87.8,
+    "LabEq": 85.7
+  },
+  "ff49_bottom8": {
+    "Food": 16.3,
+    "Beer": 14.3,
+    "Fun": 12.2,
+    "MedEq": 10.2,
+    "RlEst": 8.2,
+    "Autos": 6.1,
+    "BusSv": 4.1,
+    "Clths": 2.0
+  },
+  "stock_window": "6-1 (6-month return, skipping the latest month)",
+  "gics_sector_spsr_9m": {
+    "Information Technology": 100.0,
+    "Energy": 90.9,
+    "Health Care": 81.8,
+    "Materials": 72.7,
+    "Financials": 63.6,
+    "Utilities": 54.5,
+    "Consumer Staples": 45.5,
+    "Real Estate": 36.4,
+    "Industrials": 27.3,
+    "Communication Services": 18.2,
+    "Consumer Discretionary": 9.1
+  },
+  "long_candidates": {
+    "MRNA": 2.791,
+    "DELL": 2.293,
+    "MU": 2.153,
+    "AMD": 2.007,
+    "SNDK": 1.739,
+    "INTC": 1.724,
+    "CRWD": 1.713,
+    "HPE": 1.698,
+    "MRVL": 1.669,
+    "OKTA": 1.657,
+    "PANW": 1.478,
+    "STX": 1.358,
+    "TWLO": 1.324,
+    "DDOG": 1.32,
+    "ILMN": 1.22
+  },
+  "short_candidates": {
+    "CHTR": -0.486,
+    "ROL": -0.431,
+    "PNR": -0.387,
+    "APTV": -0.38,
+    "LULU": -0.372,
+    "NKE": -0.317,
+    "LHX": -0.308,
+    "TSCO": -0.299,
+    "HII": -0.291,
+    "LVS": -0.29,
+    "NOC": -0.285,
+    "NFLX": -0.276,
+    "APP": -0.27,
+    "MCD": -0.247,
+    "ECHO": -0.236
+  },
+  "guard_market_24m_return": 0.3581,
+  "guard_long_short_active": true
+}

@@ -1,0 +1,617 @@
+<title>LEAPS Income &amp; VIX Spikes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Layout: a single reading column (~68ch) for the paper, with figures and tables
+   allowed to run a little wider; a quiet blue-slate neutral ground, series colours
+   reserved for data. */
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --ink: #12161c;
+  --ink-2: #4a5260;
+  --ink-3: #6e7684;
+  --rule: #dde1e7;
+  --accent: #1f5fae;
+  --accent-soft: #e6eef8;
+  --good: #0c7a4a;
+  --bad: #b3261e;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --grid: #e8ebef;
+  --band: rgba(27, 175, 122, 0.22);
+  --f-display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171c; --surface: #1b1f26; --ink: #e9ecf1; --ink-2: #b5bcc8; --ink-3: #8a93a1;
+    --rule: #2c323c; --accent: #7fb0ec; --accent-soft: #1f2a3a; --good: #4cc38a; --bad: #f2867d;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --grid: #262b33;
+    --band: rgba(25, 158, 112, 0.28); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171c; --surface: #1b1f26; --ink: #e9ecf1; --ink-2: #b5bcc8; --ink-3: #8a93a1;
+  --rule: #2c323c; --accent: #7fb0ec; --accent-soft: #1f2a3a; --good: #4cc38a; --bad: #f2867d;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --grid: #262b33;
+  --band: rgba(25, 158, 112, 0.28); color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.6; }
+.page { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; display: grid; gap: 56px; }
+.prose { max-width: 68ch; }
+section { display: grid; gap: 18px; min-width: 0; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.8rem); line-height: 1.12; font-weight: 700; }
+h2 { font-size: 1.45rem; font-weight: 600; padding-top: 14px; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--f-display); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); }
+.dek { font-size: 1.15rem; color: var(--ink-2); max-width: 62ch; }
+.meta { font-family: var(--f-data); font-size: 0.78rem; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.notice { font-family: var(--f-display); font-size: 0.88rem; color: var(--ink-2); background: var(--accent-soft); border-radius: 6px; padding: 10px 14px; max-width: 68ch; }
+ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+strong { font-weight: 600; }
+code { font-family: var(--f-data); font-size: 0.85em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* findings list: the four answers */
+.answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.answers > div { background: var(--surface); padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.answers .q { font-family: var(--f-display); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.answers .a { font-family: var(--f-display); font-size: 1.02rem; font-weight: 600; line-height: 1.35; }
+.answers .d { font-size: 0.92rem; color: var(--ink-2); line-height: 1.45; }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-family: var(--f-display); font-size: 0.86rem; }
+th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--rule); }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 200px; }
+thead th { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); background: var(--bg); }
+tbody tr:last-child td { border-bottom: 0; }
+td.num, td { font-variant-numeric: tabular-nums; }
+tr.hl td { background: var(--accent-soft); }
+tr.hl td:first-child { font-weight: 600; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+caption { caption-side: bottom; text-align: left; padding: 8px 12px; font-size: 0.78rem; color: var(--ink-3); font-family: var(--f-display); }
+
+/* figures */
+figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+.fig { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 14px 8px; min-width: 0; }
+.fig h3 { font-size: 0.92rem; margin-bottom: 6px; }
+.chart { position: relative; height: 300px; }
+.chart.tall { height: 360px; }
+.chart.short { height: 180px; }
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+figcaption { font-family: var(--f-display); font-size: 0.82rem; color: var(--ink-3); max-width: 80ch; }
+
+/* playbook */
+.checklist { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; max-width: 72ch; }
+.checklist li { counter-increment: step; display: grid; grid-template-columns: 2rem 1fr; gap: 10px; }
+.checklist li::before { content: counter(step); font-family: var(--f-data); font-weight: 500; color: var(--accent); border: 1px solid var(--rule); border-radius: 50%; width: 1.7rem; height: 1.7rem; display: grid; place-items: center; font-size: 0.8rem; background: var(--surface); }
+.alloc { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.alloc div { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; background: var(--surface); display: grid; gap: 2px; }
+.alloc .pct { font-family: var(--f-data); font-size: 1.35rem; font-weight: 500; }
+.alloc .what { font-family: var(--f-display); font-size: 0.85rem; color: var(--ink-2); }
+.refs { font-size: 0.92rem; color: var(--ink-2); display: grid; gap: 8px; padding-left: 1.2em; margin: 0; }
+footer { font-family: var(--f-display); font-size: 0.8rem; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 16px; }
+@media (max-width: 560px) { body { font-size: 16px; } .chart { height: 250px; } .chart.tall { height: 300px; } }
+</style>
+
+<main class="page">
+  <header style="display:grid;gap:16px">
+    <div class="eyebrow">Research paper · looper3 options study</div>
+    <h1>LEAPS income and VIX spike trading: risk and capital efficiency</h1>
+    <p class="dek">Can deep-in-the-money LEAPS plus monthly call sales beat owning the market, and can volatility spikes be traded profitably? We test both on 30 years of free data, net of costs, then work out how to split an account between them.</p>
+    <div class="meta"><span>SPY 1996–2026</span><span>Sector ETFs 2001–2026</span><span>VIX sleeves 2007–2026</span><span>Monthly rebalancing · net of bid/ask + commissions</span></div>
+    <p class="notice">Not investment advice. Option prices are modelled from VIX data and checked against two real indices, not taken from historical quotes. The limitations section explains what that means.</p>
+  </header>
+
+  <section>
+    <h2>The seven answers</h2>
+    <div class="answers">
+      <div><span class="q">LEAPS vs shares on SPY</span><span class="a">Same return for 28% of the capital</span><span class="d">Selling calls above the LEAPS cut volatility and drawdown (−40% vs −51%). The premium is mostly paid back in rallies, so it lowers risk rather than adding return.</span></div>
+      <div><span class="q">LEAPS on momentum sectors</span><span class="a">No. Hold sectors as shares</span><span class="d">Rolling LEAPS 4–5 times a year costs 3.8%/yr in spreads, and calls sold on rising sectors paid out about 3%/yr more than they collected.</span></div>
+      <div><span class="q">Trading VIX spikes</span><span class="a">Fade the spike after it peaks</span><span class="d">+7.5%/yr at a Sharpe of 0.61 (real SVXY check: +7.7%). Buying volatility after it spikes lost money.</span></div>
+      <div><span class="q">Splitting the account</span><span class="a">Fund the fade sleeve with freed-up cash</span><span class="d">Balanced mix: 12.9%/yr vs SPY's 10.7%, with a −40% drawdown vs −51%. Standing VIX-call insurance hurt every mix.</span></div>
+      <div><span class="q">Long/short with a 50-day tilt</span><span class="a">Keep the sleeve neutral, with broad baskets</span><span class="d">The 150/50 tilt was a big edge before 1996 and is small since. A 20% market-neutral momentum sleeve improved every mix (Balanced Sharpe 0.80 → 0.89).</span></div>
+      <div><span class="q">Growth leadership: QQQ, mid/small caps, Mag 7, AI</span><span class="a">Own the leaders by rule; LEAPS on QQQ, no calls</span><span class="d">A 50/50 SPY/QQQ core plus two long/short sleeves made 17.6–19.2%/yr in 2007–2026, vs 16.6% for QQQ. The same core lost 60% in 2000–02.</span></div>
+      <div><span class="q">Goal: higher Sharpe and 25%+</span><span class="a">About 24% a year with safe limits; 27% only by taking crash risk</span><span class="d">Eight sleeves with risk balanced across four groups reached a Sharpe of about 1.0 before leverage. Levered with hard limits: 24.3%/yr, max drawdown −35%. Selling put spreads to buy calls for free worked best on QQQ.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>1. Calibrating the option model</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>Free historical option quotes don't exist, so every option here is priced with Black-Scholes (or Black-76 for VIX options) on a volatility surface built from VIX, VIX3M and VVIX. Before trusting it, we fitted its settings to two real, tradable records.</p>
+      <ul class="tight">
+        <li><strong>Option price level:</strong> at-the-money 1-month volatility = 0.82 × VIX. With that setting, a simulated monthly S&amp;P put-selling strategy earns 8.83%/yr, against 8.82%/yr for CBOE's real ^PUT index.</li>
+        <li><strong>Term structure:</strong> volatility drifts back toward its long-run level at a rate fitted to VIX3M. 18-month LEAPS come out at 15.5% volatility when VIX is 12, 17% at VIX 20 and 22% at VIX 45, which is realistic for SPY.</li>
+        <li><strong>VIX futures:</strong> the modelled 30-day futures position tracks the real VIXY fund with 0.95 daily correlation and the same decay (−64.6%/yr vs −65.4%/yr).</li>
+      </ul>
+    </div>
+    <figure>
+      <div class="duo">
+        <div class="fig"><h3>Model vs real put-write index, 1996–2026</h3><div class="chart"><canvas id="c_put" aria-label="Growth of $1: CBOE PUT index versus model"></canvas></div></div>
+        <div class="fig"><h3>VIX-futures model vs real VIXY, 2011–2026</h3><div class="chart"><canvas id="c_vixy" aria-label="Growth of $1: VIXY versus model, log scale"></canvas></div></div>
+      </div>
+      <figcaption>Growth of $1, log scale. The model put-write ends a little below the real index ($5.9 vs $6.6), so the option-selling results that follow are, if anything, slightly conservative.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>2. The LEAPS income engine</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>Each month end: hold a <strong>0.80-delta LEAPS call about 1.5 years out</strong>, sized so its market exposure equals owning the shares. Roll it with 6 months left or if its delta leaves 0.60–0.97. Then <strong>sell one 0.25-delta 1-month call</strong> per LEAPS. All cash not spent on LEAPS earns T-bill interest, and nothing is borrowed.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>SPY, Oct 1996 – Oct 2026</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th><th>Capital in options</th><th>Call premium /yr</th><th>Call payouts /yr</th></tr></thead>
+      <tbody>
+        <tr><td>Shares (buy &amp; hold)</td><td>10.0%</td><td>15.3%</td><td>0.60</td><td>−51%</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>Covered call (shares + calls)</td><td>9.7%</td><td>12.0%</td><td>0.70</td><td>−36%</td><td>—</td><td>6.9%</td><td>7.1%</td></tr>
+        <tr><td>LEAPS only</td><td>10.0%</td><td>15.7%</td><td>0.59</td><td>−52%</td><td>28%</td><td>—</td><td>—</td></tr>
+        <tr class="hl"><td>LEAPS + short calls</td><td>10.3%</td><td>12.7%</td><td>0.71</td><td>−40%</td><td>28%</td><td>9.2%</td><td>9.4%</td></tr>
+        <tr><td>LEAPS + calls, paused during VIX spikes</td><td>9.8%</td><td>13.4%</td><td>0.65</td><td>−46%</td><td>28%</td><td>7.4%</td><td>8.0%</td></tr>
+      </tbody>
+      <caption>Net of bid/ask spreads and $0.65/contract commissions. Premium and payouts are shown as a share of the account per year.</caption>
+    </table></div>
+    <figure>
+      <div class="duo">
+        <div class="fig"><h3>SPY: same exposure, about 28% of the capital</h3><div class="chart"><canvas id="c_spy" aria-label="Growth of $1 for SPY shares, LEAPS, and LEAPS plus calls"></canvas></div></div>
+        <div class="fig"><h3>Top-2 momentum sectors: options lose the edge</h3><div class="chart"><canvas id="c_mom" aria-label="Growth of $1 for momentum sectors in shares, LEAPS, and LEAPS plus calls"></canvas></div></div>
+      </div>
+      <figcaption>Growth of $1, log scale. Hover for values. Left 1996–2026, right 2001–2026.</figcaption>
+    </figure>
+    <div class="prose" style="display:grid;gap:14px">
+      <h3>What this means</h3>
+      <ul class="tight">
+        <li><strong>Capital efficiency is the real edge.</strong> About 28 cents in LEAPS does the work of $1 of stock. The other 72 cents earns T-bill interest or funds the VIX sleeve below, and the most the LEAPS can lose in a crash is the premium paid.</li>
+        <li><strong>Call income lowers risk; it doesn't add return.</strong> Selling calls brings in about 0.75% of the account each month. Rallies take nearly all of it back (payouts 9.4%/yr vs premium 9.2%/yr). What you keep is a smoother ride: Sharpe 0.59 → 0.71 and max drawdown −52% → −40%.</li>
+        <li><strong>Keep selling through VIX spikes.</strong> Pausing call sales during spikes lowered the Sharpe from 0.71 to 0.65. Premiums are richest right after a spike, which is when selling pays best.</li>
+        <li><strong>Settings:</strong> 0.80 delta beat 0.70 and 0.90. 1.5–2 years beat 1 year. A 0.25-delta short call was the middle ground: 0.15 delta kept more upside (10.3% CAGR, −48% drawdown), and 0.35 delta cut drawdown further (−40%) but gave up return (8.6%).</li>
+      </ul>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Top-2 momentum sectors, 2001 – 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>LEAPS rolls /yr</th><th>Spread cost /yr</th><th>Calls: premium − payouts</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Shares (the momentum tilt)</td><td>9.9%</td><td>0.56</td><td>−49%</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>Covered call on shares</td><td>7.9%</td><td>0.51</td><td>−43%</td><td>—</td><td>1.3%</td><td class="neg">−2.6%</td></tr>
+        <tr><td>LEAPS only</td><td>5.8%</td><td>0.33</td><td>−51%</td><td>4.5</td><td>3.8%</td><td>—</td></tr>
+        <tr><td>LEAPS + calls</td><td>3.0%</td><td>0.19</td><td>−45%</td><td>4.5</td><td>5.4%</td><td class="neg">−3.1%</td></tr>
+        <tr><td>LEAPS only, patient limit orders</td><td>7.8%</td><td>0.44</td><td>−51%</td><td>4.4</td><td>1.9%</td><td>—</td></tr>
+      </tbody>
+      <caption>Momentum picks sectors expected to keep rising, so calls sold on them end in the money more often than option prices assume.</caption>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>3. Trading VIX spikes</h2>
+    <div class="prose"><p>Four ways to trade volatility, tested daily from March 2007. Where a real fund exists, the same rule was rerun on the fund's actual prices (2011+).</p></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Sleeve and rule</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>Time active</th><th>Real-fund check</th></tr></thead>
+      <tbody>
+        <tr><td>Always long VIX futures</td><td class="neg">−41%</td><td>−0.21</td><td>−100%</td><td>100%</td><td>VIXY: −48%/yr</td></tr>
+        <tr><td>Long vol only while VIX ≥ VIX3M (term structure inverted)</td><td class="neg">−10.6%</td><td>−0.01</td><td>−96%</td><td>11%</td><td>VIXY: −2.5%/yr</td></tr>
+        <tr class="hl"><td>Spike fade: 0.5× short VIX futures after the peak. Enter when VIX ≥ 25, VIX is back below VIX3M, and VIX is ≥ 15% off its 10-day high. Exit below 18, after 40 days, or if VIX ≥ VIX3M again.</td><td class="pos">+7.5%</td><td>0.61</td><td>−22%</td><td>12%</td><td>SVXY: +7.7%/yr, Sharpe 0.59</td></tr>
+        <tr><td>OTM VIX calls bought monthly (1.3× strike, sell at 5×)</td><td colspan="4" style="text-align:left">Returned $0.17 per $1 of premium; 4.7% of months paid</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+    <figure>
+      <div class="fig"><h3>VIX, with the spike-fade position shaded</h3><div class="chart"><canvas id="c_vix" aria-label="Weekly VIX with spike-fade periods shaded"></canvas></div></div>
+      <div class="fig"><h3>Fading the spike earns; chasing it bleeds</h3><div class="chart"><canvas id="c_sleeves" aria-label="Growth of $1 for spike fade versus long volatility"></canvas></div></div>
+      <figcaption>The fade rule waits for three signs the spike is over, so it never shorted a rising spike. It was flat through February 2018 and February–March 2020, and entered afterwards. Its worst month was −17.5% (June 2010). It made +36% in 2008 and +17–20% a year in 2020–2022.</figcaption>
+    </figure>
+    <div class="prose"><p><strong>Why buying spikes fails:</strong> by the time a spike is visible, futures already price it in, and decay resumes as soon as fear fades. <strong>Why VIX calls disappoint:</strong> they pay hugely in crashes (about 14× and 7× a month's budget over 2008 and 2020), but they lose 83–93% of the premium on average. In the combined portfolios they never reduced the worst drawdown.</p></div>
+  </section>
+
+  <section>
+    <h2>4. Splitting the account</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>Four building blocks, combined in 96 ways and tested April 2007 – October 2026:</p>
+      <ul class="tight">
+        <li><strong>Core</strong>: SPY LEAPS + monthly calls, at exposure λ of 0.75×, 1.0×, 1.25× or 1.5× the account.</li>
+        <li><strong>Fade</strong>: the spike-fade sleeve at 0%, 10% or 20% of the account, funded from the cash the LEAPS free up.</li>
+        <li><strong>Boost</strong>: while the spike-over signal is on, run the core at λ + 0.5 for the next month.</li>
+        <li><strong>Tail hedge</strong>: OTM VIX calls costing 0, 0.25%, 0.5% or 1% of the account per month.</li>
+      </ul>
+    </div>
+    <figure>
+      <div class="fig"><h3>Return vs worst drawdown, all 96 mixes</h3><div class="chart tall"><canvas id="c_frontier" aria-label="Scatter of compound return against max drawdown for 96 allocations"></canvas></div></div>
+      <figcaption>Up and to the left is better. Grey points pay for a VIX-call tail hedge, and every one of them sits below its unhedged twin. Hover any point to see its mix.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Portfolio, 2007 – 2026</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th><th>Worst month</th><th>2008</th><th>2020</th><th>2022</th><th>Capital in options</th></tr></thead>
+      <tbody>
+        <tr><td>SPY shares</td><td>10.7%</td><td>15.4%</td><td>0.64</td><td>−51%</td><td>—</td><td>−36.8%</td><td>+18.3%</td><td>−18.2%</td><td>—</td></tr>
+        <tr><td>SPY covered call</td><td>10.0%</td><td>12.4%</td><td>0.71</td><td>−39%</td><td>—</td><td>−27.5%</td><td>+15.8%</td><td>−18.4%</td><td>—</td></tr>
+        <tr><td>Core alone (λ 1.0)</td><td>10.3%</td><td>12.7%</td><td>0.72</td><td>−40%</td><td>−14.5%</td><td>−28.4%</td><td>+13.8%</td><td>−17.1%</td><td>29%</td></tr>
+        <tr class="hl"><td>Conservative: λ 0.75 + 20% fade</td><td>10.0%</td><td>10.5%</td><td>0.82</td><td>−25%</td><td>−8.2%</td><td>−15.2%</td><td>+14.4%</td><td>−9.9%</td><td>22%</td></tr>
+        <tr class="hl"><td>Balanced: λ 1.0 + 20% fade + boost</td><td>12.9%</td><td>15.0%</td><td>0.78</td><td>−40%</td><td>−14.5%</td><td>−21.6%</td><td>+30.2%</td><td>−15.2%</td><td>29%</td></tr>
+        <tr class="hl"><td>Aggressive: λ 1.25 + 20% fade + boost</td><td>14.7%</td><td>17.9%</td><td>0.77</td><td>−48%</td><td>−18.2%</td><td>−28.8%</td><td>+33.4%</td><td>−19.2%</td><td>35%</td></tr>
+        <tr><td>λ 1.5, no VIX sleeves</td><td>14.2%</td><td>18.7%</td><td>0.73</td><td>−56%</td><td>−21.9%</td><td>−41.3%</td><td>+20.2%</td><td>−21.2%</td><td>42%</td></tr>
+      </tbody>
+      <caption>The three named mixes were picked after seeing these results, so expect somewhat less going forward.</caption>
+    </table></div>
+    <figure>
+      <div class="fig"><h3>Recommended mixes vs owning SPY</h3><div class="chart"><canvas id="c_mixes" aria-label="Growth of $1 for three recommended mixes and SPY"></canvas></div>
+        <div class="chart short"><canvas id="c_dd" aria-label="Drawdown of three recommended mixes and SPY"></canvas></div></div>
+      <figcaption>Top: growth of $1, log scale. Bottom: drawdown from the previous high.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>What each building block does (averaged over the other settings)</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>Fade sleeve 0% → 10% → 20%</td><td>7.1 → 7.8 → 8.6%</td><td>0.42 → 0.46 → 0.50</td><td>−45 → −44 → −42%</td></tr>
+        <tr><td>Buy-the-spike boost off → on</td><td>7.4 → 8.2%</td><td>0.45 → 0.47</td><td>−42 → −45%</td></tr>
+        <tr><td>VIX-call tail hedge 0 → 0.25 → 0.5 → 1%/month</td><td class="neg">12.5 → 9.8 → 7.1 → 2.0%</td><td>0.75 → 0.59 → 0.42 → 0.06</td><td>−43 → −43 → −44 → −44%</td></tr>
+        <tr><td>Core exposure λ 0.75 → 1.0 → 1.25 → 1.5</td><td>5.0 → 7.0 → 8.8 → 10.6%</td><td>0.36 → 0.45 → 0.49 → 0.53</td><td>−30 → −40 → −48 → −56%</td></tr>
+      </tbody>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <h3>How much leverage?</h3>
+      <p>Over 2007–2026 the growth rate kept rising all the way to 2× exposure, so a strict growth-maximising (Kelly) rule says go higher. That comes from one strong bull market. Over the full 30 years, 2× exposure fell 76–88% from peak (2000–2002, then 2008). Choose λ from the worst drop you would actually sit through instead:</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Drawdown you can live with</th><th>Setting</th></tr></thead>
+      <tbody>
+        <tr><td>About 25%</td><td style="text-align:left">Conservative: λ 0.75 + fade</td></tr>
+        <tr><td>About 40% (like a covered call)</td><td style="text-align:left">Balanced: λ 1.0 + fade + boost</td></tr>
+        <tr><td>About 50% (like the stock market)</td><td style="text-align:left">Aggressive: λ 1.25 + fade + boost</td></tr>
+        <tr><td>More than 55%</td><td style="text-align:left">Not recommended</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>5. Long/short momentum with a 50-day tilt</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>Each month end, go long the 10 strongest and short the 10 weakest stocks by 6-1 momentum (the 6-month return, skipping the latest month). Every day, check SPY's close against its 50-day moving average and set the next day's weights. With the requested <strong>150/50 tilt</strong>, the long side gets 150% and the short side 50% while SPY is above its average, and the reverse while it's below. We also tested 130/70, a full flip (100/0), and a 1% band that waits until SPY is 1% past its average before switching. The band cuts switches from 18 to 7 a year.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>10 long / 10 short, S&amp;P 500 stocks, 1996–2026</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>Biased test (today's index members at every date): 150/50 tilt</td><td class="pos">+10.4%</td><td>53%</td><td>0.41</td><td>−98%</td></tr>
+        <tr><td>Fairer test (only stocks already in the index on each date): no tilt</td><td class="neg">−6.3%</td><td>36%</td><td>−0.07</td><td>−98%</td></tr>
+        <tr><td>Fairer test: 150/50 tilt</td><td class="neg">−9.0%</td><td>47%</td><td>−0.01</td><td>−99%</td></tr>
+        <tr><td>Fairer test: flip with 1% band (best version)</td><td class="neg">−1.9%</td><td>34%</td><td>0.05</td><td>−87%</td></tr>
+        <tr><td>SPY long/short by its 50-day average (timing only)</td><td class="neg">−2.3%</td><td>19%</td><td>−0.14</td><td>−72%</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>10.2%</td><td>19%</td><td>0.48</td><td>−55%</td></tr>
+      </tbody>
+      <caption>Free data only lists today's S&amp;P 500 members. The biased test picks companies that joined the index because they soared, so it effectively knows the future.</caption>
+    </table></div>
+    <div class="prose"><p>To test the tilt idea fairly, we reran it on Ken French's daily momentum portfolios. They include every US stock, including companies that later failed, going back to 1926. Each side holds hundreds of stocks (the top or bottom 10% by 12-2 momentum) instead of 10.</p></div>
+    <figure>
+      <div class="fig"><h3>Sharpe ratio of each tilt, before and after 1996</h3><div class="chart tall"><canvas id="c_ls" aria-label="Bar chart of Sharpe ratio by tilt version for 1927-1996 and 1996-2026"></canvas></div></div>
+      <figcaption>Before 1996, tilting toward the winners in uptrends roughly doubled momentum's Sharpe. Since then, the market's 50-day trend has stopped predicting anything (the market-timing bar fell from 0.75 to 0.00), so the tilt adds little.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Adding a 20% momentum sleeve to the mixes, 2007–2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>2008</th><th>2022</th></tr></thead>
+      <tbody>
+        <tr><td>Balanced, no sleeve</td><td>13.1%</td><td>0.80</td><td>−39.7%</td><td>−21.6%</td><td>−15.2%</td></tr>
+        <tr class="hl"><td>Balanced + market-neutral momentum</td><td>14.0%</td><td>0.89</td><td>−36.9%</td><td>−18.4%</td><td>−11.0%</td></tr>
+        <tr><td>Balanced + 150/50 tilt</td><td>13.2%</td><td>0.81</td><td>−40.0%</td><td>−20.2%</td><td>−16.8%</td></tr>
+        <tr><td>Balanced + 150/50 tilt with 1% band</td><td>13.9%</td><td>0.86</td><td>−37.5%</td><td>−16.7%</td><td>−16.5%</td></tr>
+        <tr><td>Conservative, no sleeve</td><td>10.2%</td><td>0.83</td><td>−25.4%</td><td>−15.2%</td><td>−9.9%</td></tr>
+        <tr class="hl"><td>Conservative + market-neutral momentum</td><td>10.9%</td><td>0.91</td><td>−22.2%</td><td>−11.9%</td><td>−5.7%</td></tr>
+        <tr><td>Aggressive, no sleeve</td><td>15.0%</td><td>0.79</td><td>−48.1%</td><td>−28.8%</td><td>−19.2%</td></tr>
+        <tr class="hl"><td>Aggressive + market-neutral momentum</td><td>15.9%</td><td>0.87</td><td>−44.7%</td><td>−25.8%</td><td>−15.2%</td></tr>
+      </tbody>
+      <caption>Survivorship-free CRSP version of the sleeve, funded from the mix's T-bill cash. Period ends September 2026, when the French data ends.</caption>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <ul class="tight">
+        <li><strong>Neutral beats tilted inside the mix.</strong> The LEAPS core already owns the market. A market-neutral momentum sleeve diversifies it, while the 150/50 tilt adds even more market exposure.</li>
+        <li><strong>If you use the tilt, add the 1% band.</strong> It cuts whipsaw trades by 60% and was the only tilted version that helped the mix.</li>
+        <li><strong>50 days is a reasonable length.</strong> 50–100 days did best since 1996 (Sharpe 0.26), ahead of 20 days (0.23) and 200 days (0.22).</li>
+        <li><strong>Ten stocks per side is too few.</strong> Volatility ran 34–48% with drawdowns near −100%. Hold broad baskets, such as 50+ names per side or long/short ETFs.</li>
+        <li><strong>Today (2026-11-06):</strong> SPY closed at 737.74, below its 50-day average of 765.73, so the tilt would overweight shorts.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. Growth leadership: QQQ, mid and small caps, Mag 7 and AI</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>This section holds the leading parts of the market instead of all of it. "Mag 7" and "AI leaders" are groups we only name today because they already won, so a 30-year backtest of them would pick the winners in advance. We tested the idea two ways: a <strong>rule-based rotation</strong> that could have been run in real time, and the <strong>actual named basket from January 2023</strong>, when the group was first identifiable.</p>
+      <p><strong>The rotation:</strong> each month, rank QQQ, MDY (mid caps), IJR (small caps), SMH (semiconductors), IGV (software) and the 11 sector ETFs by the strength rating, and hold the top 3. Over 24 years it held QQQ in 35% of months, semis 33%, tech 28%, and mid and small caps 20% each. Today's picks are <strong>SMH, XLE and XLK</strong>.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Daily, Aug 2002 – Oct 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>2008</th><th>2022</th></tr></thead>
+      <tbody>
+        <tr><td>SPY</td><td>11.1%</td><td>0.57</td><td>−55%</td><td>−36.8%</td><td>−18.2%</td></tr>
+        <tr><td>QQQ</td><td>15.7%</td><td>0.70</td><td>−53%</td><td>−41.7%</td><td>−32.6%</td></tr>
+        <tr><td>Mid caps (MDY) / small caps (IJR)</td><td>10.4% / 10.7%</td><td>0.49 / 0.48</td><td>−55% / −58%</td><td>−36% / −32%</td><td>−13% / −16%</td></tr>
+        <tr class="hl"><td>Leadership rotation, top 3</td><td>14.6%</td><td>0.68</td><td>−50%</td><td>−33.0%</td><td>−8.3%</td></tr>
+        <tr><td>Leadership rotation, 50-day tilt (100% above / 50% below)</td><td>11.1%</td><td>0.65</td><td>−36%</td><td>−20.9%</td><td>−8.6%</td></tr>
+        <tr><td>Growth mix: 40% QQQ, 15% mid, 10% small, 35% rotation</td><td>14.3%</td><td>0.68</td><td>−52%</td><td>−36.5%</td><td>−19.9%</td></tr>
+        <tr><td>Leadership long/short 150/50 with 1% band</td><td class="neg">−0.7%</td><td>0.05</td><td>−56%</td><td>+17.9%</td><td>−2.3%</td></tr>
+      </tbody>
+      <caption>Owning the leaders works; shorting the lagging ETFs earned nothing.</caption>
+    </table></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Named basket, Jan 2023 – Nov 2026 (hindsight)</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>Mag 7, equal weight</td><td>47.7%</td><td>1.44</td><td>−29%</td></tr>
+        <tr><td>AI leaders: NVDA, AVGO, AMD, TSM, ORCL, PLTR, ANET, MU, SMCI, ARM, VRT, CRWD, NOW, DELL</td><td>78.7%</td><td>1.58</td><td>−36%</td></tr>
+        <tr><td>Mag 7 + AI, with 50-day tilt</td><td>54.6%</td><td>1.58</td><td>−24%</td></tr>
+        <tr><td>Top-5 momentum inside the group</td><td>70.4%</td><td>1.30</td><td>−38%</td></tr>
+        <tr><td>SMH (semiconductor ETF, no stock picking)</td><td>49.2%</td><td>1.16</td><td>−36%</td></tr>
+        <tr><td>QQQ</td><td>27.2%</td><td>1.05</td><td>−23%</td></tr>
+      </tbody>
+      <caption>These figures describe the years when this group was the market's story. They are not a forecast.</caption>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <ul class="tight">
+        <li><strong>Don't sell calls on QQQ.</strong> From 2000 to 2026, calls sold on QQQ paid out 16.4%/yr against 12.0% collected. Hold QQQ through LEAPS without calls, and keep the income calls on SPY.</li>
+        <li><strong>Tilt QQQ by its own 50-day average.</strong> Cutting to half size below QQQ's own average limited 2000–02 to −48%, against −73% for buy-and-hold. The worst drop over 1999–2026 fell from −83% to −64% at about the same return.</li>
+      </ul>
+    </div>
+    <figure>
+      <div class="fig"><h3>Growth mixes vs owning QQQ or SPY, 2007–2026</h3><div class="chart"><canvas id="c_growth" aria-label="Growth of $1 for growth mixes, QQQ and SPY"></canvas></div>
+        <div class="chart short"><canvas id="c_growth_dd" aria-label="Drawdown of growth mixes, QQQ and SPY"></canvas></div></div>
+      <figcaption>Growth Balanced: a 50/50 SPY/QQQ LEAPS core with the spike-fade sleeve, plus 20% leadership long/short (150/50, 1% band) and 20% market-neutral momentum. Growth Aggressive swaps the leadership long/short for a 20% growth-mix sleeve.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Apr 2007 – Sep 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>2008</th><th>2020</th><th>2022</th></tr></thead>
+      <tbody>
+        <tr><td>Balanced (SPY core) + momentum L/S</td><td>14.0%</td><td>0.89</td><td>−36.9%</td><td>−18.4%</td><td>+27.9%</td><td>−11.0%</td></tr>
+        <tr class="hl"><td>Growth Balanced</td><td>17.6%</td><td>0.89</td><td>−38.6%</td><td>−23.1%</td><td>+70.4%</td><td>−21.8%</td></tr>
+        <tr class="hl"><td>Growth Aggressive</td><td>19.2%</td><td>0.91</td><td>−45.0%</td><td>−30.8%</td><td>+61.4%</td><td>−25.8%</td></tr>
+        <tr><td>QQQ buy &amp; hold</td><td>16.6%</td><td>0.83</td><td>−49.7%</td><td>−41.7%</td><td>+48.4%</td><td>−32.6%</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>11.0%</td><td>0.66</td><td>−50.8%</td><td>−36.8%</td><td>+18.3%</td><td>−18.2%</td></tr>
+      </tbody>
+      <caption>2007–2026 was an exceptional run for large-cap tech. Over 2000–2026 the same 50/50 SPY/QQQ LEAPS core made 8.2%/yr, no better than SPY, and fell 68% from peak.</caption>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>7. Goal: higher Sharpe and 25%+ a year</h2>
+    <div class="prose" style="display:grid;gap:14px">
+      <p>A year's return is roughly the Sharpe ratio times volatility. To clear 25% safely, the plan was to raise the Sharpe first by combining return streams that don't move together, then lever the combination to a fixed volatility target. All sizing uses past data only. The volatility target was <strong>chosen on 2008–2016 and then tested unchanged on 2017–2026</strong>.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Sleeve, Mar 2008 – Sep 2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+      <tbody>
+        <tr><td>QQQ, half size below its 50-day average</td><td>14.3%</td><td>0.81</td><td>−35%</td></tr>
+        <tr class="hl"><td>Your idea on QQQ: sell a 30/10-delta put spread, spend the credit on 25-delta calls (net premium zero)</td><td>10.0%</td><td>0.81</td><td>−25%</td></tr>
+        <tr><td>The same on SPY</td><td>4.8%</td><td>0.42</td><td>−26%</td></tr>
+        <tr><td>Spike fade: short VIX futures after the peak</td><td>9.3%</td><td>0.62</td><td>−22%</td></tr>
+        <tr><td>CBOE put-write index (real)</td><td>7.4%</td><td>0.42</td><td>−37%</td></tr>
+        <tr><td>Leaders with dual momentum (top 3, each only above its own 50-day average)</td><td>6.7%</td><td>0.47</td><td>−25%</td></tr>
+        <tr><td>Market-neutral momentum, scaled to 12% volatility</td><td>6.5%</td><td>0.45</td><td>−27%</td></tr>
+        <tr><td>Cross-asset trend: stocks, bonds, gold, commodities, dollar</td><td>3.2%</td><td>0.47</td><td>−4%</td></tr>
+      </tbody>
+      <caption>Put-spread and trend sleeves are shown per $1 of exposure, held on top of T-bill cash. Trend, momentum and spike-fade barely move with the equity sleeves (correlations about −0.1 to 0.35).</caption>
+    </table></div>
+    <div class="prose"><p><strong>Put spreads to buy calls for free works, especially on QQQ.</strong> Selling expensive downside volatility pays for the cheaper upside calls, which gives equity-like exposure with a Sharpe of 0.81 and almost no capital tied up. Its risk is a fast fall through the short put: that costs the full width of the spread. With the sleeves balanced so that each of four groups (growth, option premium, trend, momentum) carries equal risk, the <strong>Sharpe rose to about 1.0 before leverage</strong>, up from 0.80 for the Balanced mix.</p></div>
+    <figure>
+      <div class="fig"><h3>The goal portfolio vs owning QQQ or SPY, Mar 2008 – Sep 2026</h3><div class="chart"><canvas id="c_goal" aria-label="Growth of $1 for the goal portfolios, QQQ and SPY"></canvas></div>
+        <div class="chart short"><canvas id="c_goal_dd" aria-label="Drawdowns of the goal portfolios, QQQ and SPY"></canvas></div></div>
+      <figcaption>Monthly, net of costs and borrowing. Goal-25 Safe levers the four-group risk-balanced portfolio to a 40% volatility target with an 8× cap, and limits spike-fade to 0.25× the account, momentum to 1× and each put-spread sleeve to 0.5×.</figcaption>
+    </figure>
+    <div class="tbl"><table>
+      <thead><tr><th>Levered versions</th><th>CAGR 2008–16</th><th>CAGR 2017–26</th><th>CAGR full</th><th>Sharpe</th><th>Max DD</th><th>Exposure</th><th>VIX-shock day</th></tr></thead>
+      <tbody>
+        <tr><td>No sleeve limits (35% target, 6× cap)</td><td>26.4%</td><td>27.3%</td><td>26.9%</td><td>0.90</td><td>−30%</td><td>5.7×</td><td class="neg">up to −72%</td></tr>
+        <tr class="hl"><td>Goal-25 Safe (40% target, 8× cap, sleeve limits)</td><td>24.9%</td><td>23.7%</td><td>24.3%</td><td>0.87</td><td>−35%</td><td>5.2×</td><td>−12.5%</td></tr>
+        <tr><td>Safe, 35% target, 6× cap</td><td>22.8%</td><td>21.6%</td><td>22.2%</td><td>0.88</td><td>−28%</td><td>4.5×</td><td>−12.5%</td></tr>
+        <tr><td>QQQ buy &amp; hold</td><td>13.3%</td><td>21.5%</td><td>17.5%</td><td>0.77</td><td>−49%</td><td>1×</td><td>—</td></tr>
+        <tr><td>SPY buy &amp; hold</td><td>8.3%</td><td>15.2%</td><td>11.9%</td><td>0.60</td><td>−52%</td><td>1×</td><td>—</td></tr>
+      </tbody>
+      <caption>"VIX-shock day" is the one-day loss if VIX futures double, as in February 2018. Goal-25 Safe lost money only in 2008 (−6%) and 2022 (−16%). Its best years were 2009 (+53%) and 2017 (+54%).</caption>
+    </table></div>
+    <div class="prose" style="display:grid;gap:14px">
+      <ul class="tight">
+        <li><strong>Above 25% is reachable on paper, but not safely.</strong> Without limits, the sizing grows the volatility-short sleeve to about 1× the account, so a February-2018 style day could cost up to 72% at once. The backtest only avoided it because the rule happened to be out of the market that day.</li>
+        <li><strong>With limits, expect 21–24% a year.</strong> That's 6–7%/yr more than QQQ and 12%/yr more than SPY, with smaller drawdowns. The 2017–2026 test came within about 1%/yr of the 2008–2016 design period.</li>
+        <li><strong>It needs 4–5× total exposure.</strong> That's normal in a futures account and impossible in a cash account. Practical tools: micro futures for trend, LEAPS and put-spread-funded calls for equities, capped SVXY for the spike fade, and cash-secured SPY puts.</li>
+        <li><strong>To clear 25% safely, add new uncorrelated sources:</strong> currency and bond carry, commodity curves, and real option quotes. Free daily ETF data couldn't test these.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>8. The playbook</h2>
+    <h3>Growth Balanced account at a glance</h3>
+    <div class="alloc">
+      <div><span class="pct">~15%</span><span class="what">SPY LEAPS + monthly 0.25-delta calls (the income half)</span></div>
+      <div><span class="pct">~17%</span><span class="what">QQQ LEAPS, no calls; half size while QQQ is below its 50-day average</span></div>
+      <div><span class="pct">~20%</span><span class="what">Spike-fade sleeve, held in T-bills until the signal fires</span></div>
+      <div><span class="pct">~20%</span><span class="what">Leadership long/short: top-3 vs bottom-3 of the menu, 150/50 by SPY's 50-day average, 1% band</span></div>
+      <div><span class="pct">~20%</span><span class="what">Market-neutral momentum long/short, broad baskets</span></div>
+      <div><span class="pct">rest</span><span class="what">T-bills: collateral</span></div>
+    </div>
+    <p class="notice">The QQQ half-size rule was tested on QQQ shares, not yet inside this full mix.</p>
+    <h3>Balanced account at a glance</h3>
+    <div class="alloc">
+      <div><span class="pct">~29%</span><span class="what">SPY LEAPS, 0.80 delta, 1.5–2 years, sized to 1.0× account exposure</span></div>
+      <div><span class="pct">~20%</span><span class="what">Spike-fade sleeve, held in T-bills until the signal fires</span></div>
+      <div><span class="pct">~20%</span><span class="what">Market-neutral momentum sleeve, broad baskets (optional 150/50 tilt with a 1% band)</span></div>
+      <div><span class="pct">~31%</span><span class="what">T-bills or money market: collateral and cash for the boost</span></div>
+      <div><span class="pct">1 call</span><span class="what">per LEAPS each month: 1-month, 0.25 delta on SPY</span></div>
+    </div>
+    <h3>Monthly checklist (last trading day)</h3>
+    <ol class="checklist">
+      <li><span><strong>Roll LEAPS</strong> with less than 6 months left or delta outside 0.60–0.97. Resize if exposure drifted more than a third from target.</span></li>
+      <li><span><strong>Sell next month's 0.25-delta SPY call</strong>, including during spikes. Close or roll any call that is in the money.</span></li>
+      <li><span><strong>Check the spike-fade signal:</strong> VIX ≥ 25, VIX below VIX3M, and VIX ≥ 15% under its 10-day high. If it's on, short VIX futures at 0.5× the sleeve (e.g. SVXY) and raise LEAPS exposure by 0.5× for one month. Exit when VIX is below 18, after 40 days, or the moment VIX ≥ VIX3M again.</span></li>
+      <li><span><strong>Keep the momentum tilt in shares.</strong> Hold the top-2 rated sectors as ETFs, and don't sell calls on them.</span></li>
+      <li><span><strong>Re-form the momentum sleeve</strong> each month: long the strongest names, short the weakest. If you use the tilt, check SPY against its 50-day average daily, and switch only once it's more than 1% past it.</span></li>
+      <li><span><strong>Don't</strong> hold long VIX funds as a standing position, and don't pay a monthly VIX-call budget.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>9. Limitations and risks</h2>
+    <ul class="tight prose">
+      <li><strong>Modelled option prices.</strong> The model matches ^PUT and VIXY on average, but single months can differ (monthly correlation with ^PUT is 0.86). Real fills and changes in skew will vary.</li>
+      <li><strong>Early assignment.</strong> Short calls that are in the money can be assigned early, especially before ex-dividend dates. The LEAPS then have to be exercised or sold. The monthly model ignores this.</li>
+      <li><strong>Gap risk in the fade sleeve.</strong> Short-volatility funds can lose 50–90% in a day (February 2018). The rule avoided that event, but a second spike soon after entry is its main risk. Keep the sleeve at 20% of the account or less, at 0.5× leverage, and respect the stop.</li>
+      <li><strong>VIX funds decay and change.</strong> VIXY loses more than 50% a year when held, and SVXY changed its leverage in 2018. Read each fund's prospectus.</li>
+      <li><strong>Short sample, picked after the fact.</strong> The VIX sleeves cover 2007–2026, which includes one financial crisis and one pandemic crash. The allocation mixes were chosen from in-sample results. The sleeve rules themselves were set from the research literature before testing.</li>
+      <li><strong>Leverage and taxes.</strong> Exposure above 1.0× and short-VIX positions need margin and options approval. Taxes are not modelled.</li>
+      <li><strong>Not tested together:</strong> the share-based momentum tilt and the LEAPS core were tested separately, not combined.</li>
+      <li><strong>Stock-level long/short data:</strong> free data has no history of past index members or failed companies, so the 10/10 stock test can't be made fully fair. A clean test needs point-in-time data (CRSP, Norgate or Sharadar).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>References</h2>
+    <ul class="refs">
+      <li>Whaley (2002), "Return and Risk of CBOE Buy Write Monthly Index", <em>Journal of Derivatives</em>.</li>
+      <li>Israelov &amp; Nielsen (2015), "Covered Calls Uncovered", <em>Financial Analysts Journal</em>.</li>
+      <li>Carr &amp; Wu (2009), "Variance Risk Premiums", <em>Review of Financial Studies</em>.</li>
+      <li>Whaley (2013), "Trading Volatility: At What Cost?", <em>Journal of Portfolio Management</em>.</li>
+      <li>Cheng (2019), "The VIX Premium", <em>Review of Financial Studies</em>.</li>
+      <li>Israelov (2017), "Pathetic Protection: The Elusive Benefits of Protective Puts", <em>Journal of Alternative Investments</em>.</li>
+      <li>Moran &amp; Dash (2007), "VIX Futures and Options", <em>Journal of Trading</em>.</li>
+      <li>Black (1976), "The Pricing of Commodity Contracts"; Kelly (1956); Thorp (2006) on fractional Kelly.</li>
+    </ul>
+  </section>
+
+  <footer>Source code and every result file: <code>research/leaps_vix/</code> in the looper3 repository. Data: Yahoo Finance (via yfinance) and the Kenneth R. French Data Library.</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+const DATA = /*__DATA__*/{};
+const charts = [];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const money = v => v >= 100 ? "$" + v.toFixed(0) : v >= 1 ? "$" + v.toFixed(2) : "$" + v.toPrecision(2);
+const pct = (v, d = 1) => (v * 100).toFixed(d) + "%";
+
+function base(opts = {}) {
+  const ink2 = css("--ink-2"), grid = css("--grid"), font = css("--f-display");
+  return {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { position: "top", align: "start", labels: { color: ink2, boxWidth: 12, boxHeight: 2, font: { family: font, size: 11 } } },
+      tooltip: { backgroundColor: css("--surface"), titleColor: css("--ink"), bodyColor: css("--ink-2"), borderColor: css("--rule"), borderWidth: 1,
+                 titleFont: { family: font }, bodyFont: { family: font }, padding: 10, boxPadding: 4, usePointStyle: true },
+    },
+    scales: {
+      x: { ticks: { color: ink2, maxTicksLimit: 8, maxRotation: 0, font: { family: font, size: 11 },
+                    callback(v) { return this.getLabelForValue(v).slice(0, 4); } }, grid: { display: false }, border: { color: grid } },
+      y: { ticks: { color: ink2, font: { family: font, size: 11 } }, grid: { color: grid }, border: { display: false } },
+    },
+    ...opts,
+  };
+}
+
+function lineChart(id, d, colors, { log = true, yFmt = money, tipFmt = money, extra = [], yMin, yMax } = {}) {
+  const ds = Object.entries(d.series).map(([name, data], i) => ({
+    label: name, data, borderColor: colors[i], backgroundColor: colors[i], borderWidth: 2, pointRadius: 0,
+    pointHoverRadius: 4, pointHoverBorderWidth: 2, pointHoverBorderColor: css("--surface"), tension: 0, spanGaps: true,
+  }));
+  const o = base();
+  o.scales.y.type = log ? "logarithmic" : "linear";
+  if (yMin !== undefined) o.scales.y.min = yMin;
+  if (yMax !== undefined) o.scales.y.max = yMax;
+  o.scales.y.ticks.callback = v => yFmt(v);
+  if (log) {
+    // Clean 1-2-5 ticks for narrow ranges, powers of ten for wide ones.
+    o.scales.y.afterBuildTicks = axis => {
+      const lo = axis.min, hi = axis.max, decades = Math.log10(hi / lo);
+      const steps = decades > 2.5 ? [1] : [1, 2, 5];
+      const out = [];
+      for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+        for (const k of steps) { const t = k * Math.pow(10, e); if (t >= lo * 0.999 && t <= hi * 1.001) out.push({ value: t }); }
+      axis.ticks = out;
+    };
+  }
+  o.plugins.tooltip.callbacks = { label: c => ` ${c.dataset.label}: ${c.raw == null ? "—" : tipFmt(c.raw)}` };
+  return new Chart(document.getElementById(id), { type: "line", data: { labels: d.labels, datasets: [...extra, ...ds] }, options: o });
+}
+
+function render() {
+  charts.splice(0).forEach(c => c.destroy());
+  const S = [css("--s1"), css("--s2"), css("--s3"), css("--s4")];
+  charts.push(lineChart("c_put", DATA.calib_put, [S[1], S[0]]));
+  charts.push(lineChart("c_vixy", DATA.calib_vixy, [S[1], S[0]], { tipFmt: v => "$" + v.toPrecision(3) }));
+  charts.push(lineChart("c_spy", DATA.leaps_spy, [S[1], S[2], S[0]]));
+  charts.push(lineChart("c_mom", DATA.leaps_mom, [S[1], S[2], S[0]]));
+
+  // VIX with shaded fade periods
+  const v = DATA.vix;
+  const band = { label: "Spike-fade position on", data: v.series.on.map(x => (x ? 90 : null)), type: "bar",
+                 backgroundColor: css("--band"), borderWidth: 0, barPercentage: 1, categoryPercentage: 1, order: 2 };
+  const vixLine = { label: "VIX (weekly high)", data: v.series.VIX, borderColor: css("--ink-2"), backgroundColor: css("--ink-2"),
+                    borderWidth: 1.2, pointRadius: 0, tension: 0, order: 1 };
+  const ov = base();
+  ov.scales.y.min = 0; ov.scales.y.max = 90;
+  ov.plugins.tooltip.filter = i => i.datasetIndex === 1;
+  ov.plugins.tooltip.callbacks = { label: c => ` VIX ${c.raw.toFixed(1)}${v.series.on[c.dataIndex] ? " · fade position on" : ""}` };
+  charts.push(new Chart(document.getElementById("c_vix"), { type: "line", data: { labels: v.labels, datasets: [band, vixLine] }, options: ov }));
+  charts.push(lineChart("c_sleeves", DATA.vix_sleeves, [S[2], S[1]]));
+
+  // frontier scatter
+  const f = DATA.frontier;
+  const pick = { "lam0.75_tail0.0_fade0.2_noboost": "Conservative", "lam1.0_tail0.0_fade0.2_boost": "Balanced", "lam1.25_tail0.0_fade0.2_boost": "Aggressive" };
+  const pt = p => ({ x: p.dd, y: p.cagr, p });
+  const sets = [
+    { label: "With VIX-call tail hedge", data: f.points.filter(p => p.tail > 0).map(pt), backgroundColor: css("--rule"), pointRadius: 4 },
+    { label: "No tail hedge", data: f.points.filter(p => p.tail === 0 && !pick[p.key]).map(pt), backgroundColor: S[0] + "99", pointRadius: 4 },
+    { label: "Recommended mixes", data: f.points.filter(p => pick[p.key]).map(pt), backgroundColor: S[0], borderColor: css("--surface"), borderWidth: 2, pointRadius: 7 },
+    { label: "SPY benchmarks", data: Object.entries(f.bench).map(([k, b]) => ({ x: b.dd, y: b.cagr, p: { ...b, key: k } })), backgroundColor: S[1], borderColor: css("--surface"), borderWidth: 2, pointRadius: 7 },
+  ];
+  const of = base({ interaction: { mode: "nearest", intersect: true } });
+  of.plugins.legend.labels = { ...of.plugins.legend.labels, usePointStyle: true, pointStyle: "circle", boxWidth: 8, boxHeight: 8 };
+  of.scales.x = { title: { display: true, text: "Worst peak-to-trough loss", color: css("--ink-2") }, ticks: { color: css("--ink-2"), callback: x => pct(x, 0) }, grid: { color: css("--grid") } };
+  of.scales.y.title = { display: true, text: "Compound annual return", color: css("--ink-2") };
+  of.scales.y.ticks.callback = y => pct(y, 0);
+  of.plugins.tooltip.callbacks = {
+    title: items => {
+      const p = items[0].raw.p;
+      if (pick[p.key]) return pick[p.key];
+      if (p.key === "spy_shares") return "SPY shares";
+      if (p.key === "spy_covered_call") return "SPY covered call";
+      return `λ ${p.lam} · fade ${pct(p.fade, 0)} · ${p.boost ? "boost" : "no boost"} · tail ${pct(p.tail, 2)}/mo`;
+    },
+    label: c => ` CAGR ${pct(c.raw.y)} · max DD −${pct(c.raw.x, 0)} · Sharpe ${c.raw.p.sharpe.toFixed(2)}`,
+  };
+  charts.push(new Chart(document.getElementById("c_frontier"), { type: "scatter", data: { datasets: sets }, options: of }));
+
+  // Sharpe by tilt and era (grouped bars)
+  const le = DATA.ls_eras;
+  const ol = base({ indexAxis: "y", interaction: { mode: "index", intersect: false, axis: "y" } });
+  const ink2 = css("--ink-2"), gridc = css("--grid");
+  ol.scales = {
+    x: { min: 0, ticks: { color: ink2, callback: v => v.toFixed(1) }, grid: { color: gridc }, border: { display: false },
+         title: { display: true, text: "Sharpe ratio (net)", color: ink2 } },
+    y: { ticks: { color: ink2, autoSkip: false }, grid: { display: false }, border: { color: gridc } },
+  };
+  ol.plugins.legend.labels = { ...ol.plugins.legend.labels, boxWidth: 12, boxHeight: 12 };
+  ol.plugins.tooltip.callbacks = { label: c => ` ${c.dataset.label}: Sharpe ${c.raw.toFixed(2)}` };
+  charts.push(new Chart(document.getElementById("c_ls"), { type: "bar", options: ol, data: { labels: le.labels, datasets: [
+    { label: "1927–1996", data: le.series["1927-1996"], backgroundColor: S[1], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
+    { label: "1996–2026", data: le.series["1996-2026"], backgroundColor: S[0], borderRadius: 3, borderSkipped: "start", barPercentage: 0.85, categoryPercentage: 0.8 },
+  ] } }));
+
+  charts.push(lineChart("c_goal", DATA.goal, [S[1], S[0], S[2], S[3]]));
+  const zdd = lineChart("c_goal_dd", DATA.goal_dd, [S[1], S[0], S[2], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });
+  zdd.options.plugins.legend.display = false; zdd.update();
+  charts.push(zdd);
+  charts.push(lineChart("c_growth", DATA.growth_mixes, [S[0], S[1], S[2], S[3]]));
+  const gdd = lineChart("c_growth_dd", DATA.growth_mixes_dd, [S[0], S[1], S[2], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });
+  gdd.options.plugins.legend.display = false; gdd.update();
+  charts.push(gdd);
+
+  charts.push(lineChart("c_mixes", DATA.mixes, [S[1], S[2], S[0], S[3]]));
+  const dd = lineChart("c_dd", DATA.mixes_dd, [S[1], S[2], S[0], S[3]], { log: false, yFmt: y => pct(y, 0), tipFmt: y => pct(y), yMax: 0 });
+  dd.options.plugins.legend.display = false; dd.update();
+  charts.push(dd);
+}
+
+function start() {
+  if (!window.Chart) return;
+  Chart.defaults.font.family = css("--f-display");
+  render();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+}
+start();
+</script>

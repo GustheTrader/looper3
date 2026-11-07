@@ -1,0 +1,129 @@
+{
+ "as_of": "2026-11-06",
+ "quotes": "last close (Friday quotes on a weekend)",
+ "weights": {
+  "core": 0.65,
+  "vix_fade": 0.15,
+  "carry": 0.05,
+  "ff_calendars": 0.1,
+  "momentum_ls": 0.05,
+  "prediction": 0.0
+ },
+ "ff": [
+  {
+   "ticker": "SPY",
+   "spot": 735.29,
+   "ff": 0.193,
+   "signal": false,
+   "front": "2026-12-04",
+   "back": "2027-01-29",
+   "strike": 735.0,
+   "front_iv": 0.2125,
+   "back_iv": 0.19,
+   "sell": "SPY 2026-12-04 735 C  bid 18.12 / ask 18.24",
+   "buy": "SPY 2027-01-29 735 C  bid 29.65 / ask 30.47",
+   "mid": 11.88,
+   "natural": 12.35,
+   "combo_width": 0.94,
+   "limit_max": 12.02,
+   "contracts_per_100k": 0,
+   "min_portfolio_for_1": 150000.0,
+   "debit_per_100k": 0.0,
+   "size_rule": "8% of the FF sleeve (VIX 25.6)",
+   "exit": "close when FF < 0.15, or 7 days before the front expiry; GTC limit at 2x the debit"
+  },
+  {
+   "ticker": "QQQ",
+   "spot": 656.1,
+   "ff": 0.238,
+   "signal": true,
+   "front": "2026-12-04",
+   "back": "2027-01-29",
+   "strike": 655.0,
+   "front_iv": 0.3106,
+   "back_iv": 0.2717,
+   "sell": "QQQ 2026-12-04 655 C  bid 23.44 / ask 23.77",
+   "buy": "QQQ 2027-01-29 655 C  bid 37.04 / ask 37.64",
+   "mid": 13.74,
+   "natural": 14.2,
+   "combo_width": 0.93,
+   "limit_max": 13.87,
+   "contracts_per_100k": 0,
+   "min_portfolio_for_1": 173000.0,
+   "debit_per_100k": 0.0,
+   "size_rule": "8% of the FF sleeve (VIX 25.6)",
+   "exit": "close when FF < 0.15, or 7 days before the front expiry; GTC limit at 2x the debit"
+  },
+  {
+   "ticker": "IWM",
+   "spot": 273.67,
+   "ff": 0.123,
+   "signal": false,
+   "front": "2026-12-04",
+   "back": "2027-02-19",
+   "strike": 275.0,
+   "front_iv": 0.23,
+   "back_iv": 0.2117,
+   "sell": "IWM 2026-12-04 275 C  bid 6.54 / ask 6.62",
+   "buy": "IWM 2027-02-19 275 C  bid 13.15 / ask 13.26",
+   "mid": 6.62,
+   "natural": 6.72,
+   "combo_width": 0.19,
+   "limit_max": 6.65,
+   "contracts_per_100k": 1,
+   "min_portfolio_for_1": 83000.0,
+   "debit_per_100k": 665.0,
+   "size_rule": "8% of the FF sleeve (VIX 25.6)",
+   "exit": "close when FF < 0.15, or 7 days before the front expiry; GTC limit at 2x the debit"
+  },
+  {
+   "ticker": "DIA",
+   "spot": 512.22,
+   "ff": 0.125,
+   "signal": false,
+   "front": "2026-12-04",
+   "back": "2027-01-15",
+   "strike": 515.0,
+   "front_iv": 0.18,
+   "back_iv": 0.1681,
+   "sell": "DIA 2026-12-04 515 C  bid 9.10 / ask 9.70",
+   "buy": "DIA 2027-01-15 515 C  bid 15.15 / ask 15.80",
+   "mid": 6.08,
+   "natural": 6.7,
+   "combo_width": 1.25,
+   "limit_max": 6.26,
+   "contracts_per_100k": 1,
+   "min_portfolio_for_1": 78000.0,
+   "debit_per_100k": 626.0,
+   "size_rule": "8% of the FF sleeve (VIX 25.6)",
+   "exit": "close when FF < 0.15, or 7 days before the front expiry; GTC limit at 2x the debit"
+  }
+ ],
+ "vix_fade": {
+  "vix": 0.2564,
+  "vix3m": 0.24600000000000002,
+  "vix_10d_high": 0.2818,
+  "conditions": {
+   "VIX >= 25": true,
+   "contango (VIX < VIX3M)": false,
+   "VIX <= 85% of 10-day high": false
+  },
+  "entry_today": false
+ },
+ "carry": {
+  "BTC": {
+   "trailing_7d_funding_minus_tbills": 0.008983091215464083,
+   "on_tomorrow": false
+  },
+  "ETH": {
+   "trailing_7d_funding_minus_tbills": -0.013629415630516586,
+   "on_tomorrow": false
+  }
+ },
+ "decay_paper": {
+  "date": "2026-11-06",
+  "signals": [
+   "BOIL"
+  ]
+ }
+}
