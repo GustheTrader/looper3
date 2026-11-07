@@ -5,8 +5,8 @@ Two changes suggested by study_margin.py:
   1. Hold BTC/ETH through CME micro futures instead of spot: margin ~35% of notional instead
      of 100% (crypto is outside portfolio margin), at a cost: futures usually trade above spot,
      charged here as 6% a year on the crypto notional ("basis").
-  2. Leverage target L on the whole 65/35 portfolio, automatically cut each day so that the
-     previous day's margin use stays at or below 70% (the PM guardrail in the PTG and PM decks).
+  2. Leverage target L on the whole 65/35 portfolio, automatically cut each day so that margin use on
+     the positions about to be held (yesterday's VIX for the haircut) stays at or below 70% (the PM guardrail in the PTG and PM decks).
 Rule: no calendar year worse than -15%. Chosen by Calmar on 2015-10 .. 2020-12; tested 2021+.
 """
 from __future__ import annotations
@@ -31,13 +31,17 @@ def unit_util(D, vix, crypto_margin):
     core = sum(D[c] * v for c, v in fixed.items())
     hc = pd.Series([sm.haircut(v, False) for v in vix.values], index=D.index)
     core = core + (D.w_hard_rotation + D.w_space) * hc
-    return 0.65 * core + sm.TRADING_MARGIN
+    return 0.65 * core + sm.trading_margin(D)
 
 
 def run(D, vix, L_tgt, futures, cap=0.70):
     rf = D.rf
-    u1 = unit_util(D, vix, 0.35 if futures else 1.0)
-    L = np.minimum(L_tgt, cap / u1.shift(1).bfill())
+    m = 0.35 if futures else 1.0
+    u1 = unit_util(D, vix, m)                                       # margin per 1x on the day (realised VIX haircut)
+    # Size leverage on the positions about to be held: today's core weights and carry flag are set at the
+    # previous close (no look-ahead); only the VIX haircut is unknown, so use yesterday's VIX for it.
+    u_ex_ante = unit_util(D, vix.shift(1).bfill(), m)
+    L = np.minimum(L_tgt, cap / u_ex_ante)
     crypto_notional = 0.65 * (D.w_btc_tilt + D.w_eth_tilt)
     drag = (L * crypto_notional * 0.06 / 252) if futures else 0.0
     r = rf + L * (D.portfolio - rf) - (L - 1).clip(lower=0) * 0.005 / 252 - drag

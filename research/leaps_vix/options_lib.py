@@ -150,7 +150,8 @@ def load_market():
     vol = pd.read_csv(DATA / "vol_index_d.csv", index_col=0, parse_dates=True)
     ff = pd.read_csv(MOM_DATA / "ff_factors_d.csv", index_col=0, parse_dates=True)
     idx = raw.index
-    rf = (ff["RF"] * 252).reindex(idx).ffill().bfill()             # annualised T-bill rate
+    rfd = pd.read_csv(MOM_DATA / "rf_daily.csv", index_col=0, parse_dates=True)["RF"]   # precise daily T-bill return
+    rf = (rfd * 252).reindex(idx).ffill().bfill()                   # annualised T-bill rate
     tr = np.log(adj / adj.shift(252)) - np.log(raw / raw.shift(252))
     q = tr.clip(0, 0.08).fillna(0.02)                               # trailing dividend yield
     lr = np.log(adj).diff()

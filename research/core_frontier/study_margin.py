@@ -124,7 +124,15 @@ FIXED_MARGIN = {"w_btc_tilt": 1.0, "w_eth_tilt": 1.0,          # crypto: outside
                 "w_trend_hard": 0.08,                          # futures initial margin
                 "w_psc_gld": 0.06}                             # defined-risk put spread: spread width
 ETF_SLEEVES = ["w_hard_rotation", "w_space"]                   # ETFs: deck haircut by VIX regime
-TRADING_MARGIN = 0.15 * 0.5 * 0.20 + 0.10 * 0.5 + 0.05 * 2 * 0.15 + 0.05 * 0.2   # VIX fut, FF debits (~half deployed), L/S legs, PM stakes
+# trading sleeves: VIX futures (15% x 0.5 notional x 20% margin), momentum L/S legs (5% x 2 x 15%), prediction stakes (5% x 20%)
+TRADING_MARGIN_STATIC = 0.15 * 0.5 * 0.20 + 0.05 * 2 * 0.15 + 0.05 * 0.2
+CARRY_WEIGHT = 0.10
+
+
+def trading_margin(D):
+    """Daily trading-sleeve margin: static part + the carry sleeve, whose spot crypto is fully funded while it is on."""
+    on = D["carry_on"] if "carry_on" in D else 0.0
+    return TRADING_MARGIN_STATIC + CARRY_WEIGHT * on
 
 
 def utilisation(D, vix, L, hedged, trading_k=1.0):
@@ -132,7 +140,7 @@ def utilisation(D, vix, L, hedged, trading_k=1.0):
     core = sum(D[c] * v for c, v in FIXED_MARGIN.items())
     hc = pd.Series([haircut(v, hedged) for v in vix.values], index=D.index)
     core = core + sum(D[c] for c in ETF_SLEEVES) * hc
-    return L * (0.65 * core + trading_k * TRADING_MARGIN)
+    return L * (0.65 * core + trading_k * trading_margin(D))
 
 
 def deck_bands(vix):

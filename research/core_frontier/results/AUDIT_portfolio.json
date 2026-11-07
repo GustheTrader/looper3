@@ -1,0 +1,189 @@
+{
+ "checks": [
+  {
+   "id": "D1",
+   "check": "inputs reach the last US close",
+   "status": "PASS",
+   "pass": true,
+   "detail": "ETF prices (SPY) 2026-11-06; VIX family 2026-11-06; hard assets / crypto (SPY) 2026-11-06; T-bill series 2026-11-06; Ken French momentum deciles 2026-09-30; Deribit funding (hourly) 2026-11-07 (expected 2026-11-06); stale: none"
+  },
+  {
+   "id": "D2",
+   "check": "known data gap: French momentum ends 2026-09-30",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "momentum L/S sleeve is held in T-bills after 2026-09-30 (French publishes monthly with a lag); disclosed on the page"
+  },
+  {
+   "id": "D3",
+   "check": "daily T-bill series compounds to French monthly RF",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max monthly error 3.0e-15"
+  },
+  {
+   "id": "D5",
+   "check": "portfolio runs to the last US close",
+   "status": "PASS",
+   "pass": true,
+   "detail": "portfolio ends 2026-11-06, ETF data ends 2026-11-06"
+  },
+  {
+   "id": "D4",
+   "check": "portfolio uses that T-bill series",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max |CF rf - rf_daily| 3.4e-21"
+  },
+  {
+   "id": "C1",
+   "check": "carry sleeve rebuilt from hourly funding matches",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max daily diff 2.7e-15; CAGR rebuilt 6.7231% vs published 6.7231% (2019-05-15 to 2026-11-06)"
+  },
+  {
+   "id": "C2",
+   "check": "on/off signal identical",
+   "status": "PASS",
+   "pass": true,
+   "detail": "BTC on-days 817 of 1882"
+  },
+  {
+   "id": "C3",
+   "check": "no look-ahead in the carry signal",
+   "status": "PASS",
+   "pass": true,
+   "detail": "bumping funding on 2022-06-01 leaves that day's signal at 1; next day moves 1->0"
+  },
+  {
+   "id": "C4",
+   "check": "portfolio uses the published carry series",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max diff 3.4e-21"
+  },
+  {
+   "id": "C5",
+   "check": "carry = T-bills before funding history exists",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "910 days 2015-10 .. 2019-05-14 held in T-bills (disclosed)"
+  },
+  {
+   "id": "P1",
+   "check": "portfolio = 65% core + 15% VIX fade + 10% carry + 5% momentum + 5% prediction",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max daily diff 1.4e-16"
+  },
+  {
+   "id": "P2",
+   "check": "trading bucket = the four trading sleeves / 35%",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max diff 1.1e-16"
+  },
+  {
+   "id": "P3",
+   "check": "no missing values in the sleeves",
+   "status": "PASS",
+   "pass": true,
+   "detail": "2792 days 2015-10-01 .. 2026-11-06"
+  },
+  {
+   "id": "P4",
+   "check": "monthly series = compounded daily returns",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max diff 1.5e-15"
+  },
+  {
+   "id": "P5a",
+   "check": "headline stats recomputed (2015-26)",
+   "status": "PASS",
+   "pass": true,
+   "detail": "cagr 0.3198 sharpe 1.2689 max_dd -0.1905 ann_vol 0.2222 worst_year -0.0686 | max diff 1.3e-15"
+  },
+  {
+   "id": "P6a",
+   "check": "CAGR bias from the partial last month is small",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "month-count CAGR 31.98% vs exact-time CAGR 32.20%: the page counts the partial November as a full month, so its CAGRs are slightly low"
+  },
+  {
+   "id": "P5b",
+   "check": "headline stats recomputed (2021-26 test)",
+   "status": "PASS",
+   "pass": true,
+   "detail": "cagr 0.2173 sharpe 0.8658 max_dd -0.1905 ann_vol 0.2189 worst_year -0.0337 | max diff 1.1e-15"
+  },
+  {
+   "id": "P6b",
+   "check": "CAGR bias from the partial last month is small",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "month-count CAGR 21.73% vs exact-time CAGR 22.01%: the page counts the partial November as a full month, so its CAGRs are slightly low"
+  },
+  {
+   "id": "P7",
+   "check": "daily vs month-end drawdown reported",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "2021-26 max DD month-end -19.05% vs daily -23.02% (page labels each)"
+  },
+  {
+   "id": "L1",
+   "check": "trading-sleeve layer at 1x reproduces the portfolio",
+   "status": "PASS",
+   "pass": true,
+   "detail": "max diff 1.4e-16"
+  },
+  {
+   "id": "L2",
+   "check": "1.75x margin-capped layer rebuilt independently",
+   "status": "PASS",
+   "pass": true,
+   "detail": "test CAGR 23.7592% / DD -29.32% / avg lev 1.215\u00d7 vs published 23.7592% / -29.32% / 1.215\u00d7 | max diff 0.0e+00"
+  },
+  {
+   "id": "L3",
+   "check": "margin above the deck's 80% de-lever line only when VIX jumped past 50 within the day",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "ended above 70% on 4.4% of days; above 80% on 2 days (2020-03-11 80.4%, 2025-04-08 80.2%), each when VIX crossed 50 intraday and the haircut stepped up. The de-lever-at-80% rule would act intraday; the backtest does not model that."
+  },
+  {
+   "id": "L4",
+   "check": "carry sleeve's margin counted",
+   "status": "PASS",
+   "pass": true,
+   "detail": "adds 2.62% of the account on average (10% when fully on, 0 when in T-bills)"
+  },
+  {
+   "id": "G1",
+   "check": "no unfilled placeholders on the page",
+   "status": "PASS",
+   "pass": true,
+   "detail": "unfilled: none"
+  },
+  {
+   "id": "G2",
+   "check": "page statistics = CF_summary.json",
+   "status": "PASS",
+   "pass": true,
+   "detail": "test CAGR on page 21.7283%"
+  },
+  {
+   "id": "G3",
+   "check": "prose figures come from the facts table",
+   "status": "PASS",
+   "pass": true,
+   "detail": "64 figures filled at build time"
+  }
+ ],
+ "n_checks": 26,
+ "n_fail": 0,
+ "n_note": 6
+}

@@ -32,3 +32,20 @@ of deep ITM/OTM leg prices; near-zero-debit leverage) and that the earlier FF te
 SPY/QQQ/IWM/DIA, the deck reproduces March 2020 (+72% before costs, +50% realistic) but adds only ≈ +0.9%/yr over 2011–26.
 The Kadan-modelled single-name back month failed validation against real chains. The FF sleeve in `study_portfolio.py` now
 uses the deck replay (`FFA_daily.csv`, realistic costs).
+
+
+## Carry sleeve in the portfolio, data refresh and number audit
+
+* `study_carry.py` builds the funding-carry sleeve (`CARRY_daily.csv`); `study_portfolio.py` now holds
+  65% core / 15% VIX fade / **10% carry** / 5% momentum / 5% prediction, with FF calendars tracked at 0%.
+* The carry sleeve's margin (spot crypto, fully funded while on) is charged daily in `study_margin.trading_margin`.
+* Leverage in the 70%-capped layer is sized on the positions about to be held (today's weights, yesterday's VIX).
+* T-bills: Ken French's daily RF is rounded to 0.01%/day; `momentum/fetch_data.py rf` writes `rf_daily.csv`
+  (monthly RF spread over trading days, ^IRX after French's last month). Used by `options_lib` and `study_hard25`.
+* End dates follow the data (no hard-coded end).
+* `audit_portfolio.py` recomputes every headline number with separate code (`AUDIT_portfolio.json`); the page's
+  prose figures are filled from the result files at build time (`[[placeholders]]` in `cf_main.html`).
+
+Re-run order: `fetch_perps.py`, `../momentum/fetch_data.py rf`, `study_carry.py`, `study_ff.py`, `study_ff2.py`,
+`audit_ff.py`, `study_portfolio.py`, `study_margin.py`, `study_capital_layer.py`, `study_final_layer.py`,
+`study_perps.py`, `build_cf_page.py`, `audit_portfolio.py`, `build_cf_page.py`.

@@ -8,7 +8,9 @@ levered to a 40% volatility target (cap 6x), crypto capped. (research/leaps_vix/
 
 Trading sleeves (35%):
   15%  VIX spike fade   short VIX futures (0.5x) after a spike has peaked     (validated on SVXY)
-  10%  FF calendars     SPY calendars when Forward Factor > 0.20, VIX-band sizing (study_ff.py)
+  10%  Funding carry    long spot / short perp BTC+ETH, on while funding beats T-bills by 2%/yr (study_carry.py);
+                        T-bills before 2019-05 (no funding history)
+   0%  FF calendars     tracked only (paper pilot): deck-faithful replay on SPY/QQQ/IWM/DIA (audit_ff.py)
    5%  Momentum L/S     market-neutral CRSP momentum, scaled to 12% volatility
    5%  Prediction model 15-minute BTC up/down markets, KC dip-buy (study_pm.py) -- PILOT:
                         no long history, held as T-bills in this backtest
@@ -33,8 +35,9 @@ import study_hard25 as h  # noqa: E402
 import momentum_lib as ml  # noqa: E402
 
 OUT = HERE / "results"
-START, END = "2015-10-01", "2026-11-05"
-WEIGHTS = {"core": 0.65, "vix_fade": 0.15, "ff_calendars": 0.10, "momentum_ls": 0.05, "prediction": 0.05}
+START, END = "2015-10-01", None      # END = None: run to the last date in the data (no hard-coded end)
+WEIGHTS = {"core": 0.65, "vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05}
+TRACKED = ["ff_calendars"]          # computed and reported, 0% weight
 
 
 def monthly(r):
@@ -67,7 +70,12 @@ def main():
     mom_ex = (wml * (0.12 / vol).clip(upper=2.0)).reindex(idx).fillna(0)     # French data ends 2026-09: cash after
     mom = rf.reindex(idx) + mom_ex
     pm = rf.reindex(idx)
-    sleeves = pd.DataFrame({"core": core, "vix_fade": fade, "ff_calendars": ff, "momentum_ls": mom, "prediction": pm}).loc[START:END]
+    carry = pd.read_csv(OUT / "CARRY_daily.csv", index_col=0, parse_dates=True)
+    assert carry.index.equals(carry.index.sort_values()) and carry.carry.notna().loc[START:END].all(), "carry series has gaps"
+    carry_r = carry.carry.reindex(idx)
+    sleeves = pd.DataFrame({"core": core, "vix_fade": fade, "carry": carry_r, "momentum_ls": mom, "prediction": pm,
+                            "ff_calendars": ff}).loc[START:END]
+    assert abs(sum(WEIGHTS.values()) - 1) < 1e-12 and not sleeves[list(WEIGHTS)].isna().any().any(), "weights or sleeve gaps"
     tot = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS)
     trade_bucket = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS if k != "core") / 0.35
 
@@ -87,6 +95,17 @@ def main():
         return {**{k: p[k] for k in ["cagr", "ann_vol", "sharpe", "sortino", "max_dd", "calmar", "worst"]},
                 "worst_year": float(yr[yr.index > 2015].min()), "best_year": float(yr.max()),
                 "pct_years_25": float((yr[(yr.index > 2015) & (yr.index < 2026)] > 0.25).mean())}
+
+    # ---------- core volatility-target variants (65/35 and the trading sleeves kept) -> CF_core_target_variants.csv
+    var_rows = []
+    for vt, cap_ in [(0.40, 6.0), (0.50, 6.0), (0.50, 8.0), (0.60, 8.0)]:
+        core_v, _, _ = h.combine(core_S, rf, vt, cap_, caps, "cluster")
+        port_v = monthly(WEIGHTS["core"] * core_v.reindex(sleeves.index) + (1 - WEIGHTS["core"]) * trade_bucket)
+        for per, st_ in [("full", None), ("test", "2021-01-01")]:
+            x = stats(port_v, st_)
+            var_rows.append({"core_vol_target": vt, "cap": cap_, "period": per, "cagr": x["cagr"], "vol": x["ann_vol"],
+                             "sharpe": x["sharpe"], "max_dd": x["max_dd"], "worst_year": x["worst_year"]})
+    pd.DataFrame(var_rows).to_csv(OUT / "CF_core_target_variants.csv", index=False)
 
     perf_full = {k: stats(M[k]) for k in M}
     perf_test = {k: stats(M[k], "2021-01-01") for k in M}
@@ -152,7 +171,8 @@ def main():
     daily = pd.DataFrame({"portfolio": tot, "core": sleeves.core, "trading": trade_bucket, "rf": rf.loc[START:END],
                           "core_crypto_w": (core_W["btc_tilt"] + core_W["eth_tilt"]).loc[START:END],
                           "core_gross": core_W.abs().sum(axis=1).loc[START:END],
-                          "vix_fade": sleeves.vix_fade, "ff_calendars": sleeves.ff_calendars,
+                          "vix_fade": sleeves.vix_fade, "carry": sleeves.carry, "carry_on": carry.carry_on.reindex(sleeves.index),
+                          "ff_calendars": sleeves.ff_calendars,
                           "momentum_ls": sleeves.momentum_ls, "prediction": sleeves.prediction}
                          | {f"w_{c}": core_W[c].loc[START:END] for c in core_W.columns})
     daily.to_csv(OUT / "CF_daily.csv")

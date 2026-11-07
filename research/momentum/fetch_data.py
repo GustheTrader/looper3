@@ -118,6 +118,39 @@ def fetch_yahoo() -> None:
     _yf_download(tickers, DATA / "sp500_close_d.csv")
 
 
+def make_rf_daily() -> pd.DataFrame:
+    """Precise daily T-bill return.
+
+    French's DAILY file rounds RF to 0.01% a day (2025 reads 0.02%/day = 5.1%/yr against 4.3% in the monthly
+    file; 2026 reads 0.01%/day = 2.5%/yr against 3.6%). So: spread each month's RF from the MONTHLY file evenly
+    over that month's trading days; after French's last month, use the 13-week T-bill yield (^IRX, Yahoo),
+    which tracked French's monthly RF within ~10 bp a year on average in 2023-26.
+    """
+    import yfinance as yf
+    daily = pd.read_csv(DATA / "ff_factors_d.csv", index_col=0, parse_dates=True)
+    monthly = pd.read_csv(DATA / "ff_factors_m.csv", index_col=0, parse_dates=True)["RF"]
+    days = daily.index
+    key = days.to_period("M")
+    n = pd.Series(1, index=days).groupby(key).transform("size")
+    rf_m = monthly.copy()
+    rf_m.index = rf_m.index.to_period("M")
+    rf = ((1 + rf_m.reindex(key).values) ** (1 / n.values) - 1)
+    out = pd.DataFrame({"RF": rf, "source": "French monthly RF spread over trading days"}, index=days)
+    irx = yf.download("^IRX", start="2000-01-01", progress=False, auto_adjust=False)["Close"].squeeze().dropna() / 100
+    ext = irx[irx.index > days[-1]]
+    if len(ext):
+        out = pd.concat([out, pd.DataFrame({"RF": (1 + ext) ** (1 / 252) - 1, "source": "^IRX 13-week T-bill yield"}, index=ext.index)])
+    out.index.name = "date"
+    out.to_csv(DATA / "rf_daily.csv")
+    print("rf_daily", out.index[0].date(), "->", out.index[-1].date(), "| extension rows", len(ext))
+    return out
+
+
 if __name__ == "__main__":
-    fetch_french()
-    fetch_yahoo()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "rf":
+        make_rf_daily()
+    else:
+        fetch_french()
+        fetch_yahoo()
+        make_rf_daily()

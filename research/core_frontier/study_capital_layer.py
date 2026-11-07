@@ -8,7 +8,7 @@ low-volatility, low-correlation trading sleeves instead, with a hard cap on shor
 exposure (at most 10% of the account, so a day when VIX futures double costs <= 10%).
 
 Variants (65% core / 35% trading kept; trading capital levered k times, borrowing at T-bills + 0.5%):
-  k = 1, 1.5, 2, 2.5, 3 for momentum, FF calendars and the prediction pilot;
+  k = 1, 1.5, 2, 2.5, 3 for momentum, funding carry and the prediction pilot;
   VIX spike fade levered at most 4/3 (0.15 x 4/3 x 0.5 = 10% of the account short VIX futures).
 Rule: no calendar year worse than -15%. Chosen by Calmar on 2015-10 .. 2020-12, tested on 2021+.
 """
@@ -24,7 +24,7 @@ import study_margin as sm
 
 HERE = Path(__file__).parent
 OUT = HERE / "results"
-W = {"vix_fade": 0.15, "ff_calendars": 0.10, "momentum_ls": 0.05, "prediction": 0.05}
+W = {"vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05}   # must match study_portfolio.WEIGHTS
 
 
 def build(D, k, fade_cap=4 / 3):

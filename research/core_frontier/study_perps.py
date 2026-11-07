@@ -35,24 +35,8 @@ import study_hard25 as h  # noqa: E402
 import study_margin as sm  # noqa: E402
 
 OUT, DATA = HERE / "results", HERE / "data"
-PRE_PREMIUM = 0.05            # perp funding above T-bills assumed before Deribit history starts
-CARRY_COST = 0.002            # round trip, both legs (spot + perp), per switch in or out
-CARRY_ON = 0.02               # run carry only while trailing 7-day funding beats T-bills by 2%/yr
-
-
-def funding_on_days(days, rf):
-    f = pd.read_csv(DATA / "funding_daily.csv", index_col=0, parse_dates=True)
-    out = {}
-    for c in ["deribit_btc", "deribit_eth", "hl_btc", "hl_eth"]:
-        cum = f[c].dropna().cumsum()
-        cal = cum.reindex(pd.date_range(cum.index[0], days[-1], freq="D")).ffill()
-        d = cal.reindex(days, method="ffill").diff()
-        out[c] = d.where(days >= cum.index[0] + pd.Timedelta(days=1))
-    F = pd.DataFrame(out, index=days)
-    for k in ["btc", "eth"]:
-        F[f"perp_{k}"] = F[f"deribit_{k}"].fillna(rf + PRE_PREMIUM / 252)
-        F[f"stress_{k}"] = F[[f"deribit_{k}", f"hl_{k}"]].max(axis=1).fillna(rf + 2 * PRE_PREMIUM / 252)   # dearer venue each day
-    return F
+from study_carry import CARRY_COST, CARRY_ON, PRE_PREMIUM, funding_on_days  # noqa: E402,F401  (one definition of the carry rules)
+import study_carry as sc  # noqa: E402
 
 
 def drops():
@@ -115,16 +99,13 @@ def main():
                   for c in S.columns}
 
     # ---------- C. standalone carry sleeve (50/50 BTC/ETH, long spot short perp, T-bills when switched off)
-    carry = {}
-    for k in ["btc", "eth"]:
-        on = expo[f"{k}_carry_on"]
-        carry[k] = rf + on * (F[f"deribit_{k}"].fillna(rf) - rf) - on.diff().abs().fillna(0) * CARRY_COST
-    carry_sleeve = (0.5 * carry["btc"] + 0.5 * carry["eth"]).loc["2019-05-15":]
+    CB = sc.build()
+    carry_sleeve = CB.carry.loc[sc.START:]
     carry_tab = {p: stats(carry_sleeve, rf.reindex(carry_sleeve.index), sl) for p, sl in
                  {"2019-20": slice(None, "2020-12-31"), "test": slice("2021-01-01", None), "full": slice(None, None)}.items()}
     carry_year = (1 + carry_sleeve).groupby(carry_sleeve.index.year).prod() - 1
     tb_year = (1 + rf.loc[carry_sleeve.index]).groupby(carry_sleeve.index.year).prod() - 1
-    carry_on_pct = float((0.5 * expo["btc_carry_on"] + 0.5 * expo["eth_carry_on"]).loc["2019-05-15":].mean())
+    carry_on_pct = float(CB.carry_on.loc[sc.START:].mean())
 
     # ---------- D. whole portfolio: swap spot crypto for perps inside the 65% core
     wb, we = D.w_btc_tilt, D.w_eth_tilt
@@ -136,7 +117,7 @@ def main():
 
     def run(r, L_tgt, m, cap=0.70):
         u1 = sm_unit(D, vix, m)
-        L = np.minimum(L_tgt, cap / u1.shift(1).bfill())
+        L = np.minimum(L_tgt, cap / sm_unit(D, vix.shift(1).bfill(), m))      # sized on today's positions, yesterday's VIX
         out = rfD + L * (r - rfD) - (L - 1).clip(lower=0) * 0.005 / 252
         return out, L, L * u1
 
@@ -144,7 +125,7 @@ def main():
         fixed = {"w_btc_tilt": crypto_margin, "w_eth_tilt": crypto_margin, "w_trend_hard": 0.08, "w_psc_gld": 0.06}
         core = sum(D[c] * v for c, v in fixed.items())
         hc = pd.Series([sm.haircut(v, False) for v in vix.values], index=D.index)
-        return 0.65 * (core + (D.w_hard_rotation + D.w_space) * hc) + sm.TRADING_MARGIN
+        return 0.65 * (core + (D.w_hard_rotation + D.w_space) * hc) + sm.trading_margin(D)
 
     rows, keep = [], {}
     configs = [("spot (as published)", 1.0), ("perps", 0.50), ("perps", 0.35), ("perps", 0.25),
@@ -166,23 +147,23 @@ def main():
     prev_pick = "spot (as published) | margin 100% | target 1.75x"
     liq = drops()
 
-    # ---------- E. swap the 10% FF-calendar sleeve for the carry sleeve (FF retest found no tradable edge)
-    carry_full = carry_sleeve.reindex(idx).fillna(rfD)
-    swap_port = D.portfolio + 0.10 * (carry_full - D.ff_calendars)
+    # ---------- E. the 10% slot: carry (published) vs the FF calendars it replaced
+    carry_full = D.carry
+    swap_port = D.portfolio + 0.10 * (D.ff_calendars - D.carry)
     hl = {}
     for k in ["btc", "eth"]:
         f = F[f"hl_{k}"]
         tr_ = f.rolling(7).mean().shift(1) * 252 - rf.rolling(7).mean().shift(1) * 252
         on = (tr_ > CARRY_ON).astype(float)
         hl[k] = rf + on * (f.fillna(rf) - rf) - on.diff().abs().fillna(0) * CARRY_COST
-    hl_sleeve = (0.5 * hl["btc"] + 0.5 * hl["eth"]).loc["2023-06-01":]
+    hl_sleeve = (0.5 * hl["btc"] + 0.5 * hl["eth"]).loc["2023-06-01":]       # same rule on Hyperliquid funding (comparison only)
     swaps = {}
-    for name, r0 in {"65/35 as published (FF 10%)": D.portfolio, "65/35 with carry replacing FF": swap_port}.items():
+    for name, r0 in {"65/35 with FF calendars in the 10% slot (previous)": swap_port, "65/35 with carry in the 10% slot (published)": D.portfolio}.items():
         for L in [1.0, 1.75]:
             r, lev, util = run(r0, L, 1.0)
             swaps[f"{name} | target {L}x"] = {p: sm.metrics(r.loc[sl], rfD.loc[sl]) for p, sl in
                                               {"design": slice(None, "2020-12-31"), "test": slice("2021-01-01", None), "full": slice(None, None)}.items()}
-            if name.startswith("65/35 with") and L == 1.75:
+            if "published" in name and L == 1.75:
                 keep["carry_swap_175"] = (r, lev, util)
     hl_tab = sm.metrics(hl_sleeve, rf.reindex(hl_sleeve.index))
     der_same = sm.metrics(carry_sleeve.loc["2023-06-01":], rf.reindex(carry_sleeve.loc["2023-06-01":].index))

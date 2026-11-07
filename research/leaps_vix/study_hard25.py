@@ -42,7 +42,7 @@ sys.path.insert(0, str(ol.HERE.parent / "momentum"))
 import momentum_lib as ml  # noqa: E402
 
 OUT = ol.HERE / "results"
-START, MID, END = "2015-10-01", "2020-12-31", "2026-11-05"
+START, MID, END = "2015-10-01", "2020-12-31", None     # END = None: to the last date in the data
 ROT = ["GLD", "SLV", "GDX", "GDXJ", "XME", "COPX", "URA", "XLE", "XOP", "OIH", "DBC", "CPER", "PPLT", "ITA", "XAR", "UFO"]
 SPACE = ["ITA", "XAR", "UFO", "ROKT", "ARKX", "RKLB", "XOVR", "DXYZ", "SPCX"]
 TRENDS = ["GLD", "SLV", "DBB", "USO", "DBC", "XLE", "GDX", "BTC-USD"]
@@ -59,7 +59,7 @@ def load():
     px = raw.ffill().reindex(days)
     for c in px.columns:                                 # nothing before an asset existed
         px.loc[px.index < raw[c].first_valid_index(), c] = np.nan
-    rf = pd.read_csv(ml.DATA / "ff_factors_d.csv", index_col=0, parse_dates=True)["RF"].reindex(days).ffill()
+    rf = pd.read_csv(ml.DATA / "rf_daily.csv", index_col=0, parse_dates=True)["RF"].reindex(days).ffill()   # see momentum/fetch_data.make_rf_daily
     return px, rf
 
 
