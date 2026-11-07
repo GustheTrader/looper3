@@ -1,3 +1,4 @@
+<style>h3.sub{margin:26px 0 8px;font-size:1.02rem;color:var(--ink)}</style>
 <main class="page">
   <header style="display:grid;gap:14px">
     <div class="eyebrow">looper3 · portfolio plan</div>
@@ -59,9 +60,9 @@
     <div class="card">
       <h3>FF calendars · 10% (pilot): Forward Factor over time</h3>
       <div class="chart"><canvas id="c_ff" aria-label="Forward Factor of the S&P 500 volatility curve over time"></canvas></div>
-      <p class="muted">FF = (front IV − forward IV) / forward IV, from the 30-day (VIX) and 93-day (VIX3M) curves. The dashed line is the 0.20 entry threshold from the FF deck. For the S&P 500, FF was above 0.20 on only 2% of days.</p>
-      <div class="tbl"><table id="t_ff"><thead><tr><th>SPY calendars, 2007–2026</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th><th>Trades</th><th>Win rate</th><th>Avg trade</th><th>March 2020</th></tr></thead><tbody></tbody></table></div>
-      <div class="warn"><strong>The FF deck's crisis results did not reproduce.</strong> With your deck's rules (FF > 0.20, 4–10% sizing by VIX band, exit at FF < 0.15), the calendars lost about 3% a year and won 23% of trades. March 2020 came out at −3%, not +43–62%. Calendars are short the front option, so they lose when prices swing hard, and crises are when prices swing hardest. With bid/ask kept at 2% even in panics, the result is about break-even (+1.5% a year, March 2020 +17%), so execution decides everything. Keep FF calendars at pilot size, as the deck's own risk slide warns, until live fills confirm an edge. They are also more promising on single names, where FF rises above 0.20 far more often than on the index.</div>
+      <p class="muted">FF = (front IV − forward IV) / forward IV, from the 30-day (VIX) and 93-day (VIX3M) curves. The dashed line is the 0.20 entry threshold from the FF deck. For the S&amp;P 500, FF was above 0.20 on only 1–2% of days.</p>
+      <div class="tbl"><table id="t_ffa"><thead><tr><th>Deck replay, 2011–2026</th><th>Extra/yr over T-bills</th><th>Sharpe 2011–20</th><th>Sharpe 2021–26</th><th>Max DD</th><th>Trades</th><th>Win rate</th><th>March 2020</th><th>2020</th></tr></thead><tbody></tbody></table></div>
+      <div class="warn"><strong>Audited and re-run (details in the audit section below).</strong> Run the deck as written, on its own universe (SPY, QQQ, IWM, DIA, with many positions at once, VIX-band sizing, a 20% reserve and the FF &lt; 0.15 exit), and its COVID result <em>does</em> reproduce. Before costs: March 2020 +72% with an 85% win rate, against the deck's +43–62%. With realistic bid/ask: March 2020 +50%. Outside crises the trade rarely fires and earns little, about +0.9% a year over T-bills across 2011–26. Execution decides everything: at the deck's own "20–30% bid/ask at peak panic" the same trades lose heavily. The sleeve now uses this deck-faithful version with realistic costs. The carry sleeve (below) has the better risk/return for the 10% slot.</div>
     </div>
   </section>
 
@@ -99,7 +100,65 @@
         <li><strong>The hedges cost more than they saved.</strong> The SPY put backspread paid about 12% of notional in the COVID crash but cost about 0.5% a year overall. The VIX call backspread lost about 12% a year per unit.</li>
         <li><strong>Margin is the binding limit, mostly because of crypto.</strong> Spot crypto has to be fully funded, so even the unlevered 65/35 crosses 70% margin use on about a quarter of days. Holding crypto through CME futures frees margin, but their usual premium over spot and the extra crypto exposure lowered the risk-adjusted result.</li>
       </ul>
-      <strong>The usable form of the layer is a margin-capped leverage target:</strong> aim for 1.75× and let the 70% margin cap cut it automatically. In 2021–26 that made 23.9% a year against 21.5%, with a −28% worst drawdown and no year below −8% in the whole sample, comfortably inside your −15% rule.</div>
+      <strong>The usable form of the layer is a margin-capped leverage target:</strong> aim for 1.75× and let the 70% margin cap cut it automatically. In 2021–26 that made 24.0% a year against 21.5%, with a −28% worst drawdown and no year below −8% in the whole sample, comfortably inside your −15% rule.</div>
+  </section>
+
+  <section>
+    <h2>Perps for crypto, and the FF retest on the index and stocks</h2>
+    <p>Two follow-ups. First, hold BTC and ETH through <strong>perpetual futures</strong> instead of spot, using real funding-rate history: Deribit hourly from April 2019, and Hyperliquid from May 2023 as a second venue. Second, <strong>retest the Forward Factor calendars</strong> on the S&amp;P 500 with four term points (9, 30, 93 and 182 days), and on single stocks and ETFs, using the Kadan–Liu–Tang volatility factor model to fill in the back month those names lack.</p>
+
+    <h3 class="sub">1 · What a perp really costs</h3>
+    <div class="two">
+      <div class="card"><h3>Average funding a long pays per year, vs T-bills</h3><div class="chart"><canvas id="c_fund_y" aria-label="Yearly average perp funding vs T-bill rate"></canvas></div>
+        <p class="muted">A long perp pays the funding rate. Spot that is fully paid for gives up the T-bill rate instead. Perps are only cheaper in years when funding is below T-bills, as in 2022 and 2025–26.</p></div>
+      <div class="card"><h3>BTC funding (3-month average, annualised) vs T-bills</h3><div class="chart"><canvas id="c_fund_m" aria-label="BTC perp funding over time"></canvas></div>
+        <p class="muted" id="procyc_text"></p></div>
+    </div>
+    <div class="tbl"><table id="t_perp_sl"><thead><tr><th>Crypto sleeve, 2021–26</th><th>CAGR</th><th>Max DD</th><th>Sharpe</th></tr></thead><tbody></tbody></table></div>
+
+    <h3 class="sub">2 · Perps inside the 65/35 with the margin-capped leverage layer</h3>
+    <p>A perp needs only part of its notional as collateral, so less of the account counts against the 70% margin guardrail and leverage can rise. We tested 50%, 35% and 25% collateral. Liquidation was checked against every 1-day and 3-day drop since 2015.</p>
+    <div class="tbl"><table id="t_perp"><thead><tr><th>Setup</th><th>Avg leverage</th><th>CAGR 2021–26</th><th>Max DD 2021–26</th><th>Calmar 2021–26</th><th>Worst year (full)</th><th>CAGR full</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+    <p class="muted" id="liq_text"></p>
+
+    <h3 class="sub">3 · The useful part of perps: a funding-carry sleeve</h3>
+    <div class="two">
+      <div class="card"><h3>Carry sleeve vs T-bills (growth of $1)</h3><div class="chart"><canvas id="c_carry" aria-label="Carry sleeve equity curve"></canvas></div>
+        <p class="muted">Buy spot and short the perp in equal size, so price moves cancel and the position collects funding. It runs only while the trailing 7-day funding beats T-bills by 2%/yr, and sits in T-bills otherwise. Each switch in or out costs 0.2%. BTC/ETH 50/50 on Deribit.</p></div>
+      <div class="card"><h3>Year by year</h3><div class="tbl"><table id="t_carry_y"><thead><tr><th>Year</th><th>Carry sleeve</th><th>T-bills</th><th>Extra</th></tr></thead><tbody></tbody></table></div>
+        <p class="muted" id="carry_text"></p></div>
+    </div>
+    <div class="tbl"><table id="t_swap"><thead><tr><th>Whole portfolio</th><th>CAGR 2021–26</th><th>Max DD 2021–26</th><th>Calmar 2021–26</th><th>Sharpe 2021–26</th><th>Worst year (full)</th><th>CAGR full</th></tr></thead><tbody></tbody></table></div>
+
+    <h3 class="sub">4 · FF audit: is the trade modelled properly?</h3>
+    <p>You asked for an audit, so each link from the deck to the backtest was checked separately.</p>
+    <div class="tbl"><table id="t_audit"><thead><tr><th>Check</th><th>Result</th><th>Verdict</th></tr></thead><tbody></tbody></table></div>
+    <div class="two">
+      <div class="card"><h3>Deck replay: growth of $1, SPY/QQQ/IWM/DIA, deck rules</h3><div class="chart"><canvas id="c_ffa" aria-label="FF deck replay equity curves under three cost assumptions"></canvas></div>
+        <p class="muted">Same trades, three cost assumptions. Almost all the profit comes from a handful of crisis weeks (2015, 2018, 2020). Each crisis's result swings from strongly positive to strongly negative depending on the bid/ask you actually get.</p></div>
+      <div class="card"><h3>Real option chains today vs our inputs</h3><div class="tbl"><table id="t_live"><thead><tr><th>Name</th><th>30d IV</th><th>90d IV</th><th>Real FF</th><th>Our FF</th><th>ATM half-spread</th></tr></thead><tbody></tbody></table></div>
+        <p class="muted" id="live_text"></p></div>
+    </div>
+    <div class="tbl"><table id="t_ffa_all"><thead><tr><th>Universe</th><th>Exit rule</th><th>Costs</th><th>Extra/yr 2011–20</th><th>Extra/yr 2021–26</th><th>Max DD</th><th>March 2020</th><th>Most open</th></tr></thead><tbody></tbody></table></div>
+
+    <h3 class="sub">5 · FF on single stocks and ETFs (Kadan factor model): not validated</h3>
+    <p><strong>Caution: today's real option chains show this modelled back month does not match the real one</strong> (table above), so treat this part as a hypothesis. CBOE publishes only a 30-day implied vol for single names: VXAPL, VXAZN, VXGS and VXIBM, plus VXN, RVX, VXEEM, VXEWZ, VXFXI, VXSLV and VXTLT for ETFs. The paper splits each name's implied variance into <em>β² × market implied variance</em> (from VIX/VIX3M) plus an <em>idiosyncratic</em> part. We let the idiosyncratic part mean-revert to its 1-year average, at a speed fitted on 2011–20, to build each name's 93-day vol and from it the FF.</p>
+    <div class="two">
+      <div class="card"><h3>Average calendar trade by FF quartile (all weekly entries, before costs)</h3><div class="chart"><canvas id="c_ffq" aria-label="Average trade return by FF quartile"></canvas></div>
+        <p class="muted">For stocks and ETFs, a higher FF means better calendars, as the deck claims. On the S&amp;P 500 it is the opposite: high FF there means a crisis spike that keeps going.</p></div>
+      <div class="card"><h3>Average trade by implied-minus-realised variance (Kadan jump signal)</h3><div class="chart"><canvas id="c_ffk" aria-label="Average trade return by variance spread tercile"></canvas></div>
+        <p class="muted">The paper's prediction holds for stocks and ETFs: trades entered when implied variance is far above realised do worst, because jumps follow. On the index it is not clear-cut.</p></div>
+    </div>
+    <div class="tbl"><table id="t_ff2_b"><thead><tr><th>Basket</th><th>Entry rule</th><th>2011–20 extra/yr</th><th>2011–20 Sharpe</th><th>2021–26 extra/yr</th><th>2021–26 Sharpe</th><th>2021–26 trades</th><th>Win rate</th><th>2021–26 before costs</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl"><table id="t_decomp"><thead><tr><th>Name</th><th>β to S&amp;P</th><th>Systematic share of implied variance</th><th>Days with FF &gt; 0.20</th></tr></thead><tbody></tbody></table></div>
+    <p class="muted" id="check_text"></p>
+
+    <div class="warn"><strong>What changes in the plan.</strong>
+      <ul class="tight">
+        <li><strong>Keep core BTC/ETH in spot (or spot ETFs), not perps.</strong> Funding is pro-cyclical: it is highest exactly when the trend signal says hold crypto. Perps cost the crypto sleeves about 6 points a year in 2021–26. The freed margin buys more CAGR (up to 28% vs 24%), but drawdowns grow from −28% to −38–46% and the CAGR-to-drawdown ratio falls. Low collateral would also have been liquidated on 12 March 2020.</li>
+        <li><strong>Use perps for carry instead.</strong> The market-neutral funding-carry sleeve made 5.8%/yr in 2021–26 with a −1% worst drawdown and almost no link to the core (correlation 0.14). It replaces the 10% FF sleeve: the 1.75× layer goes from 23.9% to 24.6% a year with the same drawdown. Spread it across venues and cap any one exchange, because the risk here is the exchange, not the price.</li>
+        <li><strong>FF calendars: the deck works as a crisis trade, and only with good fills.</strong> Run as written on SPY/QQQ/IWM/DIA, it reproduced March 2020 (+50% with realistic costs) but adds only about +0.9% a year across 2011–26, all of it from a few crisis weeks. The modelled single-stock FF did not validate against real chains. Keep FF at pilot size, use the FF &lt; 0.15 exit (holding to expiry turned 2020 negative), and trade only liquid index ETFs with limit orders on the spread. Before sizing it up, re-test on real historical option quotes (e.g. a paid ORATS or OptionMetrics history).</li>
+      </ul></div>
   </section>
 
   <section>
@@ -194,12 +253,6 @@ function tables() {
   document.querySelector("#t_pm tbody").innerHTML = pmr.map((r, i) =>
     `<tr class="${i === 1 ? "hl" : ""}"><td style="white-space:normal">${r.label}</td><td>${r.n}</td><td>${pct(r.win_rate, 0)}</td><td>${(100 * r.avg_price).toFixed(1)}¢</td><td class="${r.edge_per_contract >= 0 ? "pos" : "neg"}">${(100 * r.edge_per_contract).toFixed(1)}¢</td><td>${r.edge_t.toFixed(1)}</td></tr>`).join("");
 
-  const ff = STATS.ff;
-  const ffRows = [["Deck rules (FF > 0.20, VIX-band sizing)", ff.gated], ["Same, flat 4% size", ff.gated_flat], ["Always on (weekly, ignoring FF)", ff.always],
-    ["Deck rules, bid/ask kept at 2% in panics", ff.sensitivity["flat 2% spreads"]], ["Deck rules, held to front expiry", ff.sensitivity["hold to front expiry"]]];
-  document.querySelector("#t_ff tbody").innerHTML = ffRows.map(([l, v], i) =>
-    `<tr class="${i === 0 ? "hl" : ""}"><td style="white-space:normal">${l}</td><td class="${v.cagr >= 0 ? "pos" : "neg"}">${pct(v.cagr)}</td><td>${v.sharpe.toFixed(2)}</td><td>${pct(v.max_dd, 0)}</td><td>${v.trades ?? "—"}</td><td>${pct(v.win_rate, 0)}</td><td>${pct(v.avg_trade, 0)}</td><td>${pct(v.ret_2020_03)}</td></tr>`).join("");
-
   const pr = [P, C, T, "BTC", "QQQ", "GLD", "SPY"];
   document.querySelector("#t_perf tbody").innerHTML = pr.map(r =>
     `<tr class="${r === P ? "hl" : ""}"><td>${r}</td><td>${pct(F[r].cagr)}</td><td>${pct(X[r].cagr)}</td><td>${X[r].sharpe.toFixed(2)}</td><td>${pct(X[r].max_dd, 0)}</td><td>${pct(F[r].worst_year)}</td><td>${pct(F[r].best_year, 0)}</td></tr>`).join("");
@@ -219,6 +272,57 @@ function tables() {
   document.querySelector("#t_var tbody").innerHTML = tg.map(k => { const [vt, cap] = k.split("|");
     const f = V.find(v => v.core_vol_target == vt && v.cap == cap && v.period === "full"), t = V.find(v => v.core_vol_target == vt && v.cap == cap && v.period === "test");
     return `<tr class="${vt == 0.4 ? "hl" : ""}"><td>${Math.round(vt * 100)}% target, ${cap}× cap${vt == 0.4 ? " (plan)" : ""}</td><td>${pct(f.cagr)}</td><td>${pct(t.cagr)}</td><td>${t.sharpe.toFixed(2)}</td><td>${pct(t.max_dd, 0)}</td></tr>`; }).join("");
+  // ---------- perps + FF retest
+  const PS = DATA.perp_sleeves, psl = { btc_spot: "BTC: spot (fully paid)", btc_perp: "BTC: perp, Deribit funding", btc_perp_stress: "BTC: perp, dearer venue each day",
+    eth_spot: "ETH: spot (fully paid)", eth_perp: "ETH: perp, Deribit funding", eth_perp_stress: "ETH: perp, dearer venue each day" };
+  document.querySelector("#t_perp_sl tbody").innerHTML = Object.keys(psl).map(k =>
+    `<tr><td>${psl[k]}</td><td>${pct(PS[k].cagr)}</td><td>${pct(PS[k].max_dd, 0)}</td><td>${PS[k].sharpe.toFixed(2)}</td></tr>`).join("");
+  const pc = DATA.procyc;
+  document.getElementById("procyc_text").textContent = `Funding is pro-cyclical. When the BTC trend signal is fully long, funding has run ${pct(pc.BTC.full, 0)} a year above T-bills; when it is mostly in cash, ${pct(pc.BTC.low, 0)}. For ETH: ${pct(pc.ETH.full, 0)} vs ${pct(pc.ETH.low, 0)}. Perps are most expensive exactly when we hold them.`;
+  document.querySelector("#t_perp tbody").innerHTML = DATA.perp_rows.map(r =>
+    `<tr class="${r.label.includes("current") ? "hl" : ""}"><td style="white-space:normal;min-width:230px">${r.label}</td><td>${r.avg_lev.toFixed(2)}×</td><td>${pct(r.test_cagr)}</td><td>${pct(r.test_max_dd, 0)}</td><td>${r.test_calmar.toFixed(2)}</td><td>${pct(r.full_worst_year)}</td><td>${pct(r.full_cagr)}</td><td style="text-align:left;white-space:normal;min-width:190px">${r.note}</td></tr>`).join("");
+  const lq = DATA.liq;
+  document.getElementById("liq_text").textContent = `Liquidation check: worst 1-day fall from the prior close to the intraday low was ${pct(lq["BTC-USD"].worst_1day_low, 0)} for BTC and ${pct(lq["ETH-USD"].worst_1day_low, 0)} for ETH (12 Mar 2020); over 3 days ${pct(lq["BTC-USD"].worst_3day_low, 0)} and ${pct(lq["ETH-USD"].worst_3day_low, 0)}. A position is closed once losses eat about 80% of its collateral, so 25% or 35% collateral would have been liquidated at the bottom, and even 50% only just survives for BTC. The backtest above does not charge for that liquidation, so the low-collateral rows flatter perps.`;
+  const CY = DATA.carry;
+  document.querySelector("#t_carry_y tbody").innerHTML = Object.keys(CY.yearly).map(y =>
+    `<tr><td>${y}${y === "2019" ? " (from May)" : ""}</td><td>${pct(CY.yearly[y])}</td><td>${pct(CY.tbill[y])}</td><td class="${CY.yearly[y] - CY.tbill[y] < 0 ? "neg" : ""}">${pct(CY.yearly[y] - CY.tbill[y])}</td></tr>`).join("");
+  document.getElementById("carry_text").textContent = `2021–26: ${pct(CY.tab.test.cagr)} a year, worst drawdown ${pct(CY.tab.test.max_dd)}, Sharpe ${CY.tab.test.sharpe.toFixed(1)}; correlation with the core ${CY.corr.toFixed(2)}. The edge has shrunk as funding fell in 2025–26, when the sleeve trailed T-bills. On Hyperliquid, where funding runs higher, the same rule made ${pct(CY.hl.cagr)} a year since mid-2023, against ${pct(CY.der23.cagr)} on Deribit, but with more venue risk.`;
+  const SW = CY.swap, swl = { "65/35 as published (FF 10%) | target 1.0x": "65/35 as published (10% FF calendars), no extra leverage",
+    "65/35 with carry replacing FF | target 1.0x": "65/35 with the carry sleeve in place of FF, no extra leverage",
+    "65/35 as published (FF 10%) | target 1.75x": "As published, 1.75× layer", "65/35 with carry replacing FF | target 1.75x": "Carry in place of FF, 1.75× layer (new recommendation)" };
+  document.querySelector("#t_swap tbody").innerHTML = Object.keys(swl).map(k => { const t = SW[k].test, f = SW[k].full;
+    return `<tr class="${swl[k].includes("new") ? "hl" : ""}"><td style="white-space:normal;min-width:240px">${swl[k]}</td><td>${pct(t.cagr)}</td><td>${pct(t.max_dd, 0)}</td><td>${t.calmar.toFixed(2)}</td><td>${t.sharpe.toFixed(2)}</td><td>${pct(f.worst_year)}</td><td>${pct(f.cagr)}</td></tr>`; }).join("");
+  const sh = DATA.ff2_share;
+  const sigl = { "always": "Every week (control)", "deck FF>0.20": "FF > 0.20 (deck)", "deck FF>0.20 + Kadan filter": "FF > 0.20 + Kadan filter",
+    "top decile FF": "FF in its top 10%", "top decile FF + Kadan filter": "FF top 10% + Kadan filter" };
+  const defl = { "SPX 30->93 (deck)": "30 → 93 days (deck)", "SPX 9->30 (weekly)": "9 → 30 days (weekly)", "SPX 93->182 (slow)": "93 → 182 days (slow)",
+    "basket: 4 stocks": "AAPL, AMZN, GS, IBM", "basket: 7 ETFs": "QQQ, IWM, EEM, EWZ, FXI, SLV, TLT" };
+  const ffrow = (r, i) => `<tr class="${i % 5 === 0 ? "grp" : ""}"><td>${i % 5 === 0 ? defl[r.def] : ""}</td><td style="white-space:normal">${sigl[r.sig]}</td>
+    <td class="${r.design.excess_cagr < 0 ? "neg" : ""}">${pct(r.design.excess_cagr)}</td><td>${r.design.sharpe.toFixed(2)}</td>
+    <td class="${r.test.excess_cagr < 0 ? "neg" : ""}">${pct(r.test.excess_cagr)}</td><td>${r.test.sharpe.toFixed(2)}</td><td>${r.test.trades}</td>
+    <td>${r.test.win == null ? "–" : pct(r.test.win, 0)}</td><td class="${r.zero.excess_cagr < 0 ? "neg" : ""}">${pct(r.zero.excess_cagr)}</td></tr>`;
+  document.querySelector("#t_ff2_b tbody").innerHTML = DATA.ff2_basket.map(ffrow).join("");
+  const DC = DATA.ff2_decomp;
+  document.querySelector("#t_decomp tbody").innerHTML = Object.keys(DC).map(n =>
+    `<tr><td>${n}</td><td>${DC[n].avg_beta.toFixed(2)}</td><td>${pct(DC[n].avg_systematic_share, 0)}</td><td>${pct(DC[n].pct_days_ff_gt_020)}</td></tr>`).join("");
+  const ck = DATA.ff2_check;
+  document.getElementById("check_text").textContent = `Model check: rebuilding the S&P 500's 93-day vol from the 30-day VIX alone with the same mean-reversion model gives a 0.98 correlation with the real VIX3M, but the modelled FF correlates only ${ck.corr_ff_model_vs_true.toFixed(2)} with the true FF, and only ${pct(ck.hit_ff_gt_020, 0)} of modelled FF > 0.20 days were real. Stock FF here is an estimate. It is good enough to rank, not to trade on as is.`;
+
+  // ---------- FF audit
+  const FA = DATA.ffa;
+  const lab_u = u => u.startsWith("deck core") ? "SPY, QQQ, IWM, DIA" : "+ GLD, SLV, TLT, EEM, EWZ, FXI", lab_c = c => c.startsWith("deck") ? "deck's panic frictions" : c;
+  const core3 = FA.rows.filter(r => r.universe.startsWith("deck core") && r.exit === "deck rules");
+  document.querySelector("#t_ffa tbody").innerHTML = core3.map(r => `<tr class="${r.cost === "realistic" ? "hl" : ""}"><td>${r.cost === "zero" ? "No trading costs" : r.cost === "realistic" ? "Realistic bid/ask (used)" : "Deck's panic frictions (20–30%)"}</td>
+    <td class="${r.full_ex < 0 ? "neg" : ""}">${r.ruin ? "wiped out" : pct(r.full_ex)}</td><td>${r.d_sh == null ? "–" : r.d_sh.toFixed(2)}</td><td>${r.t_sh == null ? "–" : r.t_sh.toFixed(2)}</td><td>${pct(r.full_dd, 0)}</td><td>${r.trades}</td><td>${pct(r.win, 0)}</td><td class="${r.mar20 < 0 ? "neg" : ""}">${pct(r.mar20, 0)}</td><td class="${r.y2020 < 0 ? "neg" : ""}">${pct(r.y2020, 0)}</td></tr>`).join("") +
+    `<tr><td>Deck's claim</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>~70%</td><td>+43–62%</td><td>+55–85%</td></tr>`;
+  document.querySelector("#t_ffa_all tbody").innerHTML = FA.rows.map(r => `<tr><td>${lab_u(r.universe)}</td><td>${r.exit === "deck rules" ? "FF &lt; 0.15 or 7 days left" : "hold to 7 days left"}</td><td>${lab_c(r.cost)}</td>
+    <td class="${r.d_ex < 0 ? "neg" : ""}">${r.ruin ? "wiped out" : pct(r.d_ex)}</td><td class="${r.t_ex < 0 ? "neg" : ""}">${r.ruin ? "–" : pct(r.t_ex)}</td><td>${r.ruin ? "−100%" : pct(r.full_dd, 0)}</td><td class="${r.mar20 < 0 ? "neg" : ""}">${pct(r.mar20, 0)}</td><td>${r.maxpos}</td></tr>`).join("");
+  document.querySelector("#t_audit tbody").innerHTML = FA.audit.map(r => `<tr><td style="white-space:normal;min-width:170px">${r[0]}</td><td style="text-align:left;white-space:normal;min-width:260px">${r[1]}</td><td class="${r[2].startsWith("Fail") || r[2].startsWith("Bug") ? "neg" : ""}" style="white-space:normal">${r[2]}</td></tr>`).join("");
+  const LV = FA.live.rows;
+  document.querySelector("#t_live tbody").innerHTML = Object.keys(LV).filter(k => !LV[k].error).map(k => { const r = LV[k], ours = k === "SPY" ? r.proxy_ff : r.model_ff;
+    return `<tr><td>${k}</td><td>${pct(r.iv_30)}</td><td>${pct(r.iv_90)}</td><td>${r.real_ff.toFixed(2)}</td><td>${ours == null ? "–" : ours.toFixed(2)}</td><td>${pct(r.half_spread_30)}</td></tr>`; }).join("");
+  document.getElementById("live_text").textContent = `Quotes from the ${FA.live.as_of} snapshot (last close; weekend quotes can be stale and wide). "Our FF" for SPY is the VIX/VIX3M proxy and for the others the Kadan model's systematic back month. SPY levels match within half a vol point, yet FF still differs by ${(LV.SPY.real_ff - LV.SPY.proxy_ff).toFixed(2)}: FF magnifies small errors in vol. For the other names the model misses badly (QQQ ${LV.QQQ.real_ff.toFixed(2)} real vs ${LV.QQQ.model_ff.toFixed(2)}).`;
+
   const L = DATA.layers;
   document.querySelector("#t_layer tbody").innerHTML = L.map(r =>
     `<tr class="${r.label.includes("recommended") ? "hl" : ""}"><td style="white-space:normal;min-width:240px">${r.label}</td><td>${pct(r.test_cagr)}</td><td>${pct(r.test_max_dd, 0)}</td><td>${r.test_calmar.toFixed(2)}</td><td class="${r.full_worst_year < -0.15 ? "neg" : ""}">${pct(r.full_worst_year)}</td><td>${pct(r.full_cagr)}</td><td style="text-align:left;white-space:normal;min-width:200px">${r.note}</td></tr>`).join("");
@@ -271,6 +375,25 @@ function render() {
   const lv = line("c_layer_lev", DATA.layer_lev, [S[0], S[3]], { log: false, fmt: v => v.toFixed(1), tip: v => v.toFixed(2) });
   lv.data.datasets.push({ label: "70% margin guardrail", data: DATA.layer_lev.labels.map(() => 0.7), borderColor: S[7], borderDash: [5, 4], borderWidth: 1.2, pointRadius: 0 });
   lv.update(); charts.push(lv);
+  // ---------- perps + FF retest charts
+  const FY = DATA.fund_years;
+  charts.push(bars("c_fund_y", FY.labels, [
+    { label: "BTC perp, Deribit", data: FY.deribit_btc, backgroundColor: S[0] },
+    { label: "ETH perp, Deribit", data: FY.deribit_eth, backgroundColor: S[2] },
+    { label: "BTC perp, Hyperliquid", data: FY.hl_btc, backgroundColor: S[3] },
+    { label: "T-bills", data: FY.tbill, backgroundColor: ink3 } ]));
+  const fmc = line("c_fund_m", DATA.fund_month, [S[0], S[3], ink3], { log: false, fmt: v => pct(v, 0), tip: v => pct(v), dash: { "T-bills": [4, 3] } });
+  charts.push(fmc);
+  charts.push(line("c_carry", DATA.carry_ec, [S[2], ink3], { log: false, fmt: v => "$" + v.toFixed(2), tip: v => "$" + v.toFixed(3), dash: { "T-bills": [4, 3] } }));
+  const Q = DATA.ff2_q, qa = Q["SPX 30->93 by FF quartile"], qb = Q["stocks+ETFs by FF quartile"];
+  charts.push(bars("c_ffq", ["FF lowest 25%", "2nd", "3rd", "FF highest 25%"], [
+    { label: "S&P 500 (30→93)", data: Object.values(qa).map(v => v.avg), backgroundColor: S[1] },
+    { label: "11 stocks & ETFs (Kadan-modelled FF)", data: Object.values(qb).map(v => v.avg), backgroundColor: S[0] } ], { fmt: v => pct(v, 0), tip: v => pct(v) + " per trade" }));
+  const ka = Q["SPX 30->93"], kb = Q["stocks+ETFs"];
+  charts.push(bars("c_ffk", ["Low spread", "Middle", "High spread (jump risk)"], [
+    { label: "S&P 500 (30→93)", data: Object.values(ka).map(v => v.avg), backgroundColor: S[1] },
+    { label: "11 stocks & ETFs", data: Object.values(kb).map(v => v.avg), backgroundColor: S[0] } ], { fmt: v => pct(v, 0), tip: v => pct(v) + " per trade" }));
+  charts.push(line("c_ffa", DATA.ffa_ec, [S[1], S[0], S[7], ink3], { log: false, fmt: v => "$" + v.toFixed(2), tip: v => "$" + v.toFixed(3), dash: { "T-bills": [4, 3] } }));
   const LY = DATA.layer_years;
   charts.push(bars("c_layer_years", LY.labels, [
     { label: "65/35, no extra leverage", data: LY.base, backgroundColor: S[1] },

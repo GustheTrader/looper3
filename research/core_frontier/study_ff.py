@@ -84,7 +84,11 @@ def run(m, mode="gated", flat_spread=False, ff_exit=True):
             exit_ff = ff_exit and mode != "always" and ff[t] < 0.15
             if t1 <= 7 or exit_ff:
                 h = 0.02 if flat_spread else half_spread(vx)
-                proceeds = p["n"] * (c2 * (1 - h) - c1 * (1 + h))
+                # half-spread in DOLLARS ~ h x the at-the-money price of each expiry (a deep in/out-of-the-money leg
+                # is not cheaper or dearer to trade in % of the ATM price; charging % of an ITM leg overstates costs)
+                a1 = ol.bs_price(St, St, max(t1, 0) / 365, r, qq, atm_iv(vx, vv, max(t1, 1)))
+                a2 = ol.bs_price(St, St, t2 / 365, r, qq, atm_iv(vx, vv, t2))
+                proceeds = p["n"] * (c2 - c1 - h * (a1 + a2))
                 cash += proceeds
                 trades.append({"entry": str(p["t0"].date()), "exit": str(t.date()), "ff_entry": p["ff"], "vix_entry": p["vix"],
                                "debit": p["debit"], "proceeds": proceeds, "ret": proceeds / p["debit"] - 1,

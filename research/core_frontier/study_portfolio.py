@@ -56,7 +56,10 @@ def main():
 
     # ---------- trading sleeves (total returns, idle cash in T-bills)
     fade = (rf + fade_ex).reindex(idx)
-    ff = pd.read_csv(OUT / "FF_daily_returns.csv", index_col=0, parse_dates=True)["gated"].reindex(idx)
+    # FF sleeve = the deck-faithful replay validated in audit_ff.py: SPY/QQQ/IWM/DIA, FF > 0.20, VIX-band size,
+    # many concurrent positions, 20% reserve, exit at FF < 0.15 or 7 days left, realistic bid/ask
+    ff = pd.read_csv(OUT / "FFA_daily.csv", index_col=0, parse_dates=True)["deck core: SPY QQQ IWM DIA | deck rules | realistic"]
+    ff = (ff + 0.0).reindex(idx)
     ff = ff.fillna(rf.reindex(idx))
     dec = pd.read_csv(ml.DATA / "mom10_d.csv", index_col=0, parse_dates=True)
     wml = (dec["Hi PRIOR"] - dec["Lo PRIOR"]) - 2 * 12 * 0.35 * 10e-4 / 252 - 0.005 / 252
