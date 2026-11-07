@@ -35,7 +35,7 @@ def main():
     d["dd"] = pack(gg / gg.cummax() - 1)
     t = p.loc["2021-01-01":, ["Frontier Plan", "Walk-forward (3-yr look-back)", "QQQ", "GLD", "BTC"]]
     d["test_ec"] = pack(growth(t))
-    names = {"btc_tilt": "BTC, 50-day exit", "eth_tilt": "ETH, 50-day exit", "space": "Space / SpaceX chain, tilted",
+    names = {"btc_tilt": "BTC, EMA-ensemble exit", "eth_tilt": "ETH, EMA-ensemble exit", "space": "Space / SpaceX chain, EMA-scaled",
              "hard_rotation": "Hard-asset rotation", "psc_gld": "Gold put spread → calls", "trend_hard": "Hard-asset trend",
              "spike_fade": "VIX spike fade"}
     d["sleeves"] = pack(growth(sl[list(names)].rename(columns=names)))
@@ -49,13 +49,22 @@ def main():
     spcx = pd.read_csv(DATA / "spcx_d.csv", index_col=0, parse_dates=True)["SPCX"].dropna()
     d["spcx"] = pack(spcx.to_frame("SpaceX (SPCX)"), "%Y-%m-%d")
     sig = {}
-    for t_, lab in [("BTC-USD", "BTC"), ("GLD", "GLD"), ("ETH-USD", "ETH")]:
-        s = raw[t_].dropna()
-        sig[lab] = {"close": round(float(s.iloc[-1]), 2), "ma50": round(float(s.rolling(50).mean().iloc[-1]), 2)}
-    sig["SPCX"] = {"close": round(float(spcx.iloc[-1]), 2), "ma50": round(float(spcx.rolling(50).mean().iloc[-1]), 2)}
+
+    def votes(s):
+        s = s.dropna()
+        out = {n: bool(s.iloc[-1] > s.ewm(span=n, adjust=False).mean().iloc[-1]) for n in (20, 50, 100, 200) if len(s) >= n}
+        return {"close": round(float(s.iloc[-1]), 2), "above": out}
+    for t_, lab in [("BTC-USD", "BTC"), ("ETH-USD", "ETH"), ("GLD", "GLD")]:
+        sig[lab] = votes(raw[t_])
+    sig["SPCX"] = votes(spcx)
     sig["as_of"] = str(raw["SPY"].dropna().index[-1].date())
     d["signals"] = sig
 
+    e = json.loads((RES / "E_summary.json").read_text())
+    d["ema"] = {"report": e["report"], "heat_design": e["heat_design_cash"], "heat_test": e["heat_test_cash"],
+                "frontier": {k: {p: {m: v[p][m] for m in ["cagr", "sharpe", "max_dd"]} for p in ["full", "design_2015_20", "test_2021_26"]}
+                             for k, v in e["frontier"].items()}}
+    d["rule_pick"] = {"key": h["rule_pick"], "test": h["rule_pick_perf_test"], "full": h["rule_pick_perf_full"]}
     g = (HERE / "goal_template.html").read_text()
     style = g[g.index("<style>"):g.index("</style>") + len("</style>")]
     helpers = g[g.index("<script src="):g.index("function tables()")]

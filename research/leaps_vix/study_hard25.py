@@ -63,8 +63,41 @@ def load():
     return px, rf
 
 
-def tilt(price, ret, rf, low=0.0, cost=1e-3):
-    e = regime(price.ffill()).map({True: 1.0, False: low}).where(price.notna(), 0.0)
+# Optional per-asset-class EMA signals (set by study_ema.py): class -> (EMA length, position below the EMA).
+# None keeps the original rule: 50-day simple average.
+SIGNAL = None
+ASSET_CLASS = {"BTC-USD": "crypto", "ETH-USD": "crypto", "GLD": "precious", "SLV": "precious", "PPLT": "precious",
+               "GDX": "miners", "GDXJ": "miners", "XME": "metals", "COPX": "metals", "CPER": "metals", "DBB": "metals",
+               "URA": "metals", "DBC": "metals", "XLE": "energy", "XOP": "energy", "OIH": "energy", "USO": "energy",
+               "ITA": "space", "XAR": "space", "UFO": "space", "space": "space", "QQQ": "equity", "SPY": "equity"}
+
+
+def ema_up(price, n):
+    p = price.ffill()
+    return (p > p.ewm(span=n, adjust=False, min_periods=n).mean()).shift(1, fill_value=True)
+
+
+ENS = (20, 50, 100, 200)
+
+
+def ens_frac(price):
+    """Share of the 20/50/100/200-day EMAs that the price is above (0 .. 1), known at yesterday's close."""
+    p = price.ffill()
+    votes = [(p > p.ewm(span=n, adjust=False, min_periods=n).mean()).astype(float) for n in ENS]
+    return (sum(votes) / len(votes)).shift(1).fillna(1.0)
+
+
+def tilt(price, ret, rf, low=0.0, cost=1e-3, cls=None):
+    if SIGNAL and cls in SIGNAL and SIGNAL[cls][0] == "ens":
+        low = SIGNAL[cls][1] if SIGNAL[cls][1] is not None else low
+        e = (low + (1 - low) * ens_frac(price)).where(price.notna(), 0.0)
+        return (e * (ret - rf) - e.diff().abs().fillna(0) * cost).where(price.notna(), 0.0)
+    if SIGNAL and cls in SIGNAL:
+        n, low = SIGNAL[cls]
+        up = ema_up(price, n)
+    else:
+        up = regime(price.ffill())
+    e = up.map({True: 1.0, False: low}).where(price.notna(), 0.0)
     return (e * (ret - rf) - e.diff().abs().fillna(0) * cost).where(price.notna(), 0.0)
 
 
@@ -72,8 +105,8 @@ def sleeves():
     px, rf = load()
     R = px.pct_change(fill_method=None)
     out = {}
-    out["btc_tilt"] = tilt(px["BTC-USD"], R["BTC-USD"], rf)
-    out["eth_tilt"] = tilt(px["ETH-USD"], R["ETH-USD"], rf)
+    out["btc_tilt"] = tilt(px["BTC-USD"], R["BTC-USD"], rf, cls="crypto")
+    out["eth_tilt"] = tilt(px["ETH-USD"], R["ETH-USD"], rf, cls="crypto")
 
     # hard-asset rotation with dual momentum
     mpx = px[ROT].resample("ME").last()
@@ -97,7 +130,12 @@ def sleeves():
                 held.append(c)
         top.loc[d, held] = 1 / 3
     top = top.reindex(px.index).ffill().shift(1).fillna(0)
-    above = (px[ROT] > px[ROT].rolling(50).mean()).shift(1, fill_value=False).astype(float)
+    if SIGNAL:
+        above = pd.DataFrame({c: (ens_frac(px[c]) >= 0.5) if SIGNAL.get(ASSET_CLASS[c], (None,))[0] == "ens"
+                              else ema_up(px[c], SIGNAL[ASSET_CLASS[c]][0]) if ASSET_CLASS[c] in SIGNAL
+                              else (px[c] > px[c].rolling(50).mean()).shift(1, fill_value=False) for c in ROT}).astype(float)
+    else:
+        above = (px[ROT] > px[ROT].rolling(50).mean()).shift(1, fill_value=False).astype(float)
     W = top * above
     out["hard_rotation"] = (W * R[ROT].fillna(0)).sum(axis=1) - W.diff().abs().sum(axis=1).fillna(0) * 5e-4 - W.sum(axis=1) * rf
     rot_hist = top.loc[START:].astype(bool).mean().sort_values(ascending=False)
@@ -106,7 +144,7 @@ def sleeves():
     sp = R[SPACE].where(px[SPACE].shift(1).notna())
     space_ret = sp.mean(axis=1, skipna=True).fillna(0)
     space_px = (1 + space_ret).cumprod()
-    out["space"] = tilt(space_px, space_ret, rf, low=0.5, cost=5e-4)
+    out["space"] = tilt(space_px, space_ret, rf, low=0.5, cost=5e-4, cls="space")
 
     # hard-asset trend
     T = px[TRENDS]
@@ -205,7 +243,14 @@ def monthly(r):
     return (1 + r.fillna(0)).resample("ME").prod() - 1
 
 
+# Default signal: EMA ensemble (20/50/100/200) for every class, chosen without fitting (see study_ema.py).
+PLAN = "cluster_vt40_cap6"
+DEFAULT_SIGNAL = {c: ("ens", None) for c in ["crypto", "precious", "miners", "metals", "energy", "space", "equity"]}
+
+
 def main():
+    global SIGNAL
+    SIGNAL = DEFAULT_SIGNAL
     S, rf, px, bench, rot_hist = sleeves()
     rf_m = monthly(rf)
     sl_stats = {c: ol.perf(S[c] + rf, 252, rf) for c in S.columns}
@@ -226,8 +271,11 @@ def main():
                             "sharpe": float(((C[k] - rf_m).mean() / (C[k] - rf_m).std()) * np.sqrt(12))} for k in C}).T
     # same rule as Goal-25: highest design-half Sharpe among settings with design CAGR >= 25%
     ok = tab[tab.design_cagr >= 0.25]
-    chosen = (ok.sort_values("design_sharpe", ascending=False).index[0] if len(ok)
-              else tab.sort_values("design_cagr", ascending=False).index[0])
+    rule_pick = (ok.sort_values("design_sharpe", ascending=False).index[0] if len(ok)
+                 else tab.sort_values("design_cagr", ascending=False).index[0])
+    # The plan keeps the 40% / 6x setting picked on the design half with the original signal, so the
+    # signal change is the only difference; the rule's new pick is reported as the lower-risk variant.
+    chosen = PLAN
 
     # walk-forward (3-yr look-back), same rule as Goal-25
     picks, wf = {}, []
@@ -308,7 +356,10 @@ def main():
                   "return_since_listing": float(spcx.iloc[-1] / spcx.iloc[0] - 1),
                   "ann_vol": float(spcx.pct_change().std() * np.sqrt(252)),
                   "max_dd": float((spcx / spcx.cummax() - 1).min())}
-    out = {"chosen": chosen, "design_table": tab.round(4).to_dict("index"),
+    low = C[rule_pick]
+    out = {"chosen": chosen, "rule_pick": rule_pick,
+           "rule_pick_perf_test": stats(low, "2021-01-01"), "rule_pick_perf_full": stats(low),
+           "design_table": tab.round(4).to_dict("index"),
            "perf_full": {k: stats(v) for k, v in series.items()},
            "perf_test": {k: stats(v, "2021-01-01") for k, v in series.items()},
            "edges": {f"Frontier Plan vs {b}": edge(plan, P[b]) for b in ["BTC", "GLD", "QQQ", "SPY"]},

@@ -17,6 +17,7 @@ python make_charts.py
 python study_goal25_wf.py          # walk-forward re-optimisation, rolling windows, edge, bootstrap
 python build_goal_page.py          # goal25.html plan page
 python study_hard25.py             # Frontier plan: crypto, hard assets, energy, space/SpaceX
+python study_ema.py                # EMA length per asset class vs 50-day SMA vs EMA ensemble
 python build_hard_page.py          # frontier.html plan page
 python build_page.py              # interactive paper.html from results/
 ```
