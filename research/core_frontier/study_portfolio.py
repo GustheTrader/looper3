@@ -146,6 +146,13 @@ def main():
            "stress_vix_double_total": float(WEIGHTS["vix_fade"] * 0.5 * 1.0)}
     (OUT / "CF_summary.json").write_text(json.dumps(out, indent=1, default=float))
     M.to_csv(OUT / "CF_monthly.csv")
+    daily = pd.DataFrame({"portfolio": tot, "core": sleeves.core, "trading": trade_bucket, "rf": rf.loc[START:END],
+                          "core_crypto_w": (core_W["btc_tilt"] + core_W["eth_tilt"]).loc[START:END],
+                          "core_gross": core_W.abs().sum(axis=1).loc[START:END],
+                          "vix_fade": sleeves.vix_fade, "ff_calendars": sleeves.ff_calendars,
+                          "momentum_ls": sleeves.momentum_ls, "prediction": sleeves.prediction}
+                         | {f"w_{c}": core_W[c].loc[START:END] for c in core_W.columns})
+    daily.to_csv(OUT / "CF_daily.csv")
     pd.DataFrame({k: monthly(v) for k, v in sleeves.items()}).to_csv(OUT / "CF_sleeves_monthly.csv")
     roll = {}
     for k in ["Core Frontier Portfolio (65/35)", "Core only (100%)", "QQQ", "BTC"]:

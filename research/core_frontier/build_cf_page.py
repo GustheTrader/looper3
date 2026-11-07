@@ -61,6 +61,47 @@ def main():
                     "VIX": round(float(vol["^VIX"].dropna().iloc[-1]), 2), "VIX3M": round(float(vol["^VIX3M"].dropna().iloc[-1]), 2),
                     "VVIX": round(float(vol["^VVIX"].dropna().iloc[-1]), 1), "FF": round(float(ff.iloc[-1]), 3),
                     "as_of": str(raw["SPY"].dropna().index[-1].date())}
+    # ---------- capital-efficiency layer (portfolio margin deck)
+    mg = pd.read_csv(RES / "MG_grid.csv").set_index("key")
+    fl = pd.DataFrame(json.loads((RES / "FL_summary.json").read_text())["rows"]).set_index("key")
+    cl = pd.DataFrame(json.loads((RES / "CL_summary.json").read_text())["rows"]).set_index("key")
+    mgs = json.loads((RES / "MG_summary.json").read_text())
+    fls = json.loads((RES / "FL_summary.json").read_text())
+    pick = lambda df, k, label, note="": {"label": label, "note": note, **{c: float(df.loc[k, c]) for c in
+             ["test_cagr", "test_max_dd", "test_calmar", "test_worst_year", "full_cagr", "full_max_dd", "full_calmar", "full_worst_year"]}}
+    rec = fls["chosen_by_design_calmar"]
+    d["layers"] = [
+        pick(mg, "const_1.0_spy0.0_vix0.0", "65/35, no extra leverage", "best return per unit of drawdown; margin over 70% on 24% of days"),
+        pick(mg, "const_1.25_spy0.0_vix0.0", "Constant 1.25×", "margin over 70% most days"),
+        pick(mg, "const_1.5_spy0.0_vix0.0", "Constant 1.5×", "margin over 70% most days"),
+        pick(mg, "deck_vix_spy0.0_vix0.0", "Deck VIX-band leverage (2.0× … 0.75×)", "cuts leverage just before rebounds"),
+        pick(mg, mgs["chosen"], "Deck bands ×1.25 + loss-budget throttle + SPY put hedge", "best on 2015–20, poor after"),
+        pick(cl, "trading x1.5 | fade capped (VIX <= 10% of account)", "Lever trading sleeves 1.5× (VIX fade capped)", "little to lever once the VIX fade is capped"),
+        pick(fl, rec, "Target 1.75× with a 70% margin cap, spot crypto (recommended)", "average leverage 1.17×"),
+        pick(fl, fls["max_cagr_meeting_rule"], "Target 2.5× with 70% cap, crypto via futures", "highest return inside the −15% year rule"),
+    ]
+    pts = [{"x": -float(r.test_max_dd), "y": float(r.test_cagr), "label": k, "group": "Whole-portfolio leverage / hedges"} for k, r in mg.iterrows()]
+    pts += [{"x": -float(r.test_max_dd), "y": float(r.test_cagr), "label": k, "group": "Margin-capped leverage"} for k, r in fl.iterrows()]
+    pts += [{"x": -float(r.test_max_dd), "y": float(r.test_cagr), "label": k, "group": "Trading-sleeve leverage"} for k, r in cl.iterrows()]
+    d["layer_points"] = pts
+    d["layer_rec_key"] = rec
+    d["hedges"] = mgs["hedges"]
+    # recommended layer: daily leverage and margin use (recomputed for the recommended target)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("fl", HERE / "study_final_layer.py"); fl_mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(fl_mod)
+    Dd = pd.read_csv(RES / "CF_daily.csv", index_col=0, parse_dates=True)
+    vol_ = pd.read_csv(LV / "data" / "vol_index_d.csv", index_col=0, parse_dates=True)["^VIX"].reindex(Dd.index).ffill() / 100
+    rr, lev, util = fl_mod.run(Dd, vol_, float(fls["chosen_by_design_calmar"].split("target ")[1].split("x")[0]), "futures" in rec)
+    mon = lambda x: (1 + x).resample("ME").prod() - 1
+    eqs = pd.DataFrame({"65/35, no extra leverage": mon(Dd.portfolio), "Recommended: 1.75× target, 70% margin cap": mon(rr),
+                        "Constant 1.5×": mon(Dd.rf + 1.5 * (Dd.portfolio - Dd.rf) - 0.5 * 0.005 / 252),
+                        "QQQ": M["QQQ"]})
+    d["layer_ec"] = pack(growth(eqs))
+    gg2 = growth(eqs)
+    d["layer_dd"] = pack(gg2 / gg2.cummax() - 1)
+    d["layer_lev"] = pack(pd.DataFrame({"Leverage used": lev.resample("W-FRI").mean(), "Margin use": util.resample("W-FRI").mean()}), "%Y-%m-%d")
+    yr2 = (1 + pd.DataFrame({"base": Dd.portfolio, "rec": rr})).groupby(Dd.index.year).prod() - 1
+    d["layer_years"] = {"labels": [str(y) for y in yr2.index], "base": [round(float(v), 4) for v in yr2.base], "rec": [round(float(v), 4) for v in yr2.rec]}
     g_ = (LV / "goal_template.html").read_text()
     style = g_[g_.index("<style>"):g_.index("</style>") + len("</style>")]
     helpers = g_[g_.index("<script src="):g_.index("function tables()")]

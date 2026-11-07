@@ -2,7 +2,7 @@
   <header style="display:grid;gap:14px">
     <div class="eyebrow">looper3 · portfolio plan</div>
     <h1>Core Frontier Investment Portfolio</h1>
-    <p class="dek"><strong>65% core investments</strong> (crypto, hard assets, energy and space, with SpaceX as the core growth asset) and <strong>35% short-term trading sleeves</strong>: VIX strategies, Forward Factor calendars, momentum long/short and prediction-market models. The trading sleeves are chosen to make money when the core is losing it.</p>
+    <p class="dek"><strong>65% core investments</strong> (crypto, hard assets, energy and space, with SpaceX as the core growth asset) and <strong>35% short-term trading sleeves</strong>: VIX strategies, Forward Factor calendars, momentum long/short and prediction-market models. The trading sleeves are chosen to make money when the core is losing it. A margin-capped leverage layer sits on top.</p>
     <div class="kpis" id="kpis"></div>
     <p class="muted">Backtest October 2015 – November 2026, monthly, net of trading costs and borrowing. 2021–2026 is the untouched test period. Not investment advice.</p>
   </header>
@@ -80,6 +80,29 @@
   </section>
 
   <section>
+    <h2>Capital-efficiency layer: portfolio margin and leverage</h2>
+    <p>The portfolio-margin deck's idea: risk-based haircuts plus a "triple hedge" (calendars, VIX call backspreads, SPY put ratio spreads) free buying power, and VIX-band leverage (2.0× when VIX &lt; 15, falling to 0.75× above 50) puts it to work. Your goal for this layer was the highest CAGR per unit of drawdown, with no calendar year worse than −15%. We tested every combination on 2015–2020, then checked the picks on 2021–2026.</p>
+    <div class="card"><h3>Return vs worst drawdown in the 2021–26 test, every leverage and hedge combination</h3><div class="chart tall"><canvas id="c_layer" aria-label="Scatter of test CAGR against max drawdown for leverage configurations"></canvas></div>
+      <p class="muted">Up and to the left is better. Hover any point to see its settings. Drawdowns in this section are measured on daily values, so they run a few points deeper than the month-end figures elsewhere on the page.</p></div>
+    <div class="tbl"><table id="t_layer"><thead><tr><th>Layer</th><th>CAGR 2021–26</th><th>Max DD 2021–26</th><th>Calmar 2021–26</th><th>Worst year (full)</th><th>CAGR full</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+    <div class="two">
+      <div class="card"><h3>Recommended layer vs no extra leverage (growth of $1)</h3><div class="chart"><canvas id="c_layer_ec" aria-label="Equity curves with and without the leverage layer"></canvas></div>
+        <div class="chart short"><canvas id="c_layer_dd" aria-label="Drawdowns with and without the leverage layer"></canvas></div></div>
+      <div class="card"><h3>Leverage used and margin use, recommended layer</h3><div class="chart"><canvas id="c_layer_lev" aria-label="Weekly leverage and margin utilisation"></canvas></div>
+        <p class="muted">Leverage is cut automatically whenever the previous day's margin use would exceed 70%, the guardrail in the PTG and margin decks. It averaged 1.17× against a 1.75× target, and the cap binds most when crypto positions are large.</p></div>
+    </div>
+    <div class="card"><h3>Calendar-year returns: recommended layer vs no extra leverage</h3><div class="chart"><canvas id="c_layer_years" aria-label="Yearly returns with and without the layer"></canvas></div></div>
+    <div class="warn"><strong>What the layer can and can't do.</strong>
+      <ul class="tight">
+        <li><strong>No leverage setting improved the return per unit of drawdown out of sample.</strong> The unlevered 65/35 had the best 2021–26 Calmar (0.94). The core is already levered inside by its 40% volatility target, so leverage on top mostly adds drawdown.</li>
+        <li><strong>The deck's VIX bands did worse than constant leverage.</strong> They cut exposure after spikes, just before the rebounds. The loss-budget throttle made the same mistake.</li>
+        <li><strong>The hedges cost more than they saved.</strong> The SPY put backspread paid about 12% of notional in the COVID crash but cost about 0.5% a year overall. The VIX call backspread lost about 12% a year per unit.</li>
+        <li><strong>Margin is the binding limit, mostly because of crypto.</strong> Spot crypto has to be fully funded, so even the unlevered 65/35 crosses 70% margin use on about a quarter of days. Holding crypto through CME futures frees margin, but their usual premium over spot and the extra crypto exposure lowered the risk-adjusted result.</li>
+      </ul>
+      <strong>The usable form of the layer is a margin-capped leverage target:</strong> aim for 1.75× and let the 70% margin cap cut it automatically. In 2021–26 that made 23.9% a year against 21.5%, with a −28% worst drawdown and no year below −8% in the whole sample, comfortably inside your −15% rule.</div>
+  </section>
+
+  <section>
     <h2>The edge we can deliver</h2>
     <div class="tbl"><table id="t_edge"><thead><tr><th>Portfolio vs…</th><th>Alpha /yr</th><th>t-stat</th><th>Beta</th><th>Extra CAGR</th><th>Up capture</th><th>Down capture</th><th>12-month windows ahead</th></tr></thead><tbody></tbody></table></div>
     <div class="two">
@@ -94,7 +117,7 @@
       </div>
     </div>
     <div class="tbl"><table id="t_var"><thead><tr><th>Core volatility target (65/35 kept)</th><th>CAGR full</th><th>CAGR 2021–26</th><th>Sharpe 2021–26</th><th>Max DD 2021–26</th></tr></thead><tbody></tbody></table></div>
-    <div class="warn"><strong>What to expect live: about 15–21% a year, with drawdowns near −20%.</strong> The 65/35 split trades return for safety. Over 2021–26 it made 21% a year against 27% for the core alone, but its worst drawdown was −19% against −33%, and its worst year was −3% against −11%. Raising the core's risk target didn't recover much return, because the crypto caps bind. If 25%+ is the priority, the lever is a bigger core share, not more leverage.</div>
+    <div class="warn"><strong>What to expect live: about 15–21% a year, with drawdowns near −20%.</strong> The 65/35 split trades return for safety. Over 2021–26 it made 21% a year against 27% for the core alone, but its worst drawdown was −19% against −33%, and its worst year was −3% against −11%. Raising the core's risk target didn't recover much return, because the crypto caps bind. The margin-capped leverage layer above adds about 2–3 points a year (23.9% in 2021–26) for a few points more drawdown. Beyond that, 25%+ needs a bigger core share.</div>
   </section>
 
   <section>
@@ -196,6 +219,9 @@ function tables() {
   document.querySelector("#t_var tbody").innerHTML = tg.map(k => { const [vt, cap] = k.split("|");
     const f = V.find(v => v.core_vol_target == vt && v.cap == cap && v.period === "full"), t = V.find(v => v.core_vol_target == vt && v.cap == cap && v.period === "test");
     return `<tr class="${vt == 0.4 ? "hl" : ""}"><td>${Math.round(vt * 100)}% target, ${cap}× cap${vt == 0.4 ? " (plan)" : ""}</td><td>${pct(f.cagr)}</td><td>${pct(t.cagr)}</td><td>${t.sharpe.toFixed(2)}</td><td>${pct(t.max_dd, 0)}</td></tr>`; }).join("");
+  const L = DATA.layers;
+  document.querySelector("#t_layer tbody").innerHTML = L.map(r =>
+    `<tr class="${r.label.includes("recommended") ? "hl" : ""}"><td style="white-space:normal;min-width:240px">${r.label}</td><td>${pct(r.test_cagr)}</td><td>${pct(r.test_max_dd, 0)}</td><td>${r.test_calmar.toFixed(2)}</td><td class="${r.full_worst_year < -0.15 ? "neg" : ""}">${pct(r.full_worst_year)}</td><td>${pct(r.full_cagr)}</td><td style="text-align:left;white-space:normal;min-width:200px">${r.note}</td></tr>`).join("");
 }
 
 function render() {
@@ -222,6 +248,33 @@ function render() {
     { label: "QQQ", data: b.QQQ.map(v => v / 10000), backgroundColor: S[1] } ], { fmt: v => pct(v, 0), tip: v => pct(v) + " of paths" });
   bc.options.scales.x.ticks.callback = function (v) { return this.getLabelForValue(v).split("–")[0] + "%"; };
   bc.options.scales.x.ticks.maxTicksLimit = 9; bc.update(); charts.push(bc);
+  // ---------- capital-efficiency layer
+  const groups = ["Whole-portfolio leverage / hedges", "Trading-sleeve leverage", "Margin-capped leverage"];
+  const gcol = [css("--rule"), S[3], S[0]];
+  const lp = DATA.layer_points;
+  const sets = groups.map((gname, i) => ({ label: gname, data: lp.filter(p => p.group === gname && p.label !== DATA.layer_rec_key), backgroundColor: gcol[i], pointRadius: 4 }));
+  sets.push({ label: "Recommended", data: lp.filter(p => p.label === DATA.layer_rec_key), backgroundColor: S[2], borderColor: css("--surface"), borderWidth: 2, pointRadius: 8 });
+  const base = lp.find(p => p.label === "const_1.0_spy0.0_vix0.0");
+  sets.push({ label: "65/35, no extra leverage", data: [base], backgroundColor: S[1], borderColor: css("--surface"), borderWidth: 2, pointRadius: 8 });
+  const ol = base_();
+  function base_() { const o = { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: "nearest", intersect: true },
+    plugins: { legend: { position: "top", align: "start", labels: { color: css("--ink-2"), usePointStyle: true, boxWidth: 8, boxHeight: 8 } },
+      tooltip: { backgroundColor: css("--surface"), titleColor: css("--ink"), bodyColor: css("--ink-2"), borderColor: css("--rule"), borderWidth: 1,
+        callbacks: { title: it => it[0].raw.label, label: c => ` CAGR ${pct(c.raw.y)} · max DD −${pct(c.raw.x, 0)}` } } },
+    scales: { x: { title: { display: true, text: "Worst drawdown, 2021–26", color: css("--ink-2") }, ticks: { color: css("--ink-2"), callback: v => pct(v, 0) }, grid: { color: css("--grid") } },
+              y: { title: { display: true, text: "CAGR, 2021–26", color: css("--ink-2") }, ticks: { color: css("--ink-2"), callback: v => pct(v, 0) }, grid: { color: css("--grid") } } } };
+    return o; }
+  charts.push(new Chart(document.getElementById("c_layer"), { type: "scatter", data: { datasets: sets }, options: ol }));
+  charts.push(line("c_layer_ec", DATA.layer_ec, [S[1], S[2], S[3], ink3], { dash: { "QQQ": [2, 3] } }));
+  const ldd = line("c_layer_dd", DATA.layer_dd, [S[1], S[2], S[3], ink3], { log: false, fmt: v => pct(v, 0), tip: v => pct(v), yMax: 0 });
+  ldd.options.plugins.legend.display = false; ldd.update(); charts.push(ldd);
+  const lv = line("c_layer_lev", DATA.layer_lev, [S[0], S[3]], { log: false, fmt: v => v.toFixed(1), tip: v => v.toFixed(2) });
+  lv.data.datasets.push({ label: "70% margin guardrail", data: DATA.layer_lev.labels.map(() => 0.7), borderColor: S[7], borderDash: [5, 4], borderWidth: 1.2, pointRadius: 0 });
+  lv.update(); charts.push(lv);
+  const LY = DATA.layer_years;
+  charts.push(bars("c_layer_years", LY.labels, [
+    { label: "65/35, no extra leverage", data: LY.base, backgroundColor: S[1] },
+    { label: "Recommended layer", data: LY.rec, backgroundColor: S[2] } ]));
 }
 
 tables();
