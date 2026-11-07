@@ -42,6 +42,14 @@ def main():
         x = yf.download(["TLT", "IEF", "GLD", "DBC", "UUP", "SHY", "HYG", "EFA", "EEM", "SPY", "QQQ"],
                         start="2000-01-01", auto_adjust=True, progress=False)["Close"]
         x.to_csv(DATA / "cross_asset_adj_d.csv")
+    if not (DATA / "hard_assets_adj_d.csv").exists():   # Frontier plan: crypto, hard assets, energy, space
+        h = yf.download(["BTC-USD", "ETH-USD", "GLD", "SLV", "GDX", "GDXJ", "XME", "COPX", "URA", "XLE", "XOP", "OIH", "USO",
+                         "DBC", "DBB", "CPER", "PPLT", "ITA", "XAR", "UFO", "ROKT", "ARKX", "RKLB", "XOVR", "DXYZ", "GOOGL",
+                         "MSTR", "COIN", "IBIT", "SPY", "QQQ", "^GVZ", "^OVX", "GBTC"], start="2004-01-01",
+                        auto_adjust=True, progress=False)["Close"]
+        h.to_csv(DATA / "hard_assets_adj_d.csv")
+        s = yf.download("SPCX", start="2026-01-01", auto_adjust=True, progress=False)["Close"]   # SpaceX, listed 2026-06-12
+        (s.iloc[:, 0] if hasattr(s, "columns") else s).rename("SPCX").to_frame().to_csv(DATA / "spcx_d.csv")
     for f in DATA.glob("*.csv"):
         x = pd.read_csv(f, index_col=0, parse_dates=True)
         print(f.name, x.shape, x.index[0].date(), x.index[-1].date())

@@ -1,0 +1,203 @@
+<main class="page">
+  <header style="display:grid;gap:14px">
+    <div class="eyebrow">looper3 · plan sheet</div>
+    <h1>Frontier Plan: crypto, hard assets, energy and space</h1>
+    <p class="dek">The Goal-25 framework rebuilt around Bitcoin, gold and silver, miners, metals, uranium, energy, aerospace and space, with SpaceX as the core growth asset. Seven sleeves in four risk groups, levered to a 40% volatility target with hard caps on crypto.</p>
+    <div class="kpis" id="kpis"></div>
+    <p class="muted">Backtest October 2015 – November 2026, monthly, net of trading costs and borrowing. The target was chosen on 2015–2020 and tested unchanged on 2021–2026. Not investment advice.</p>
+  </header>
+
+  <section>
+    <h2>SpaceX: the core growth asset</h2>
+    <div class="two">
+      <div class="card"><h3>SpaceX (SPCX) since its listing</h3><div class="chart"><canvas id="c_spcx" aria-label="SpaceX share price since listing"></canvas></div></div>
+      <div class="card">
+        <p id="spcx_text"></p>
+        <ul class="tight">
+          <li><strong>Five months can't be backtested.</strong> The space sleeve uses a chain of public proxies, equal-weighting whatever existed on each day:
+            <ul class="tight">
+              <li>ITA and XAR aerospace ETFs (2006+);</li>
+              <li>UFO and ROKT space ETFs (2019+);</li>
+              <li>ARKX and Rocket Lab (2021+);</li>
+              <li>XOVR and DXYZ, funds that held pre-IPO SpaceX shares (2024+);</li>
+              <li>SPCX itself from June 2026.</li>
+            </ul></li>
+          <li><strong>The sleeve holds full size above its 50-day average and half size below.</strong> SpaceX's volatility since listing (about 80% a year) is close to Bitcoin's, so size it like crypto, not like an index fund.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The plan</h2>
+    <div class="two">
+      <div class="card">
+        <h3>Sleeves and sizing (× account value)</h3>
+        <div class="tbl"><table id="t_weights"><thead><tr><th>Sleeve</th><th>Group</th><th>Sharpe</th><th>Now</th><th>Avg</th></tr></thead><tbody></tbody></table></div>
+        <p class="muted">Hard caps: BTC ≤ 0.35×, ETH ≤ 0.15×, VIX spike fade ≤ 0.25×, gold put-spread sleeve ≤ 0.5×. Total exposure averaged about 2.6×.</p>
+      </div>
+      <div class="card">
+        <h3>How it is run</h3>
+        <ul class="tight">
+          <li><strong>Crypto:</strong> hold BTC and ETH only while each is above its own 50-day average, otherwise cash. The exit avoided most of 2018 and 2022.</li>
+          <li><strong>Hard-asset rotation:</strong> each month, hold the top 3 of gold, silver, miners, metals, copper, uranium, energy, oil services, platinum, aerospace and space by strength rating. Each is held only while above its own 50-day average. Aerospace, junior gold miners and copper were held most often.</li>
+          <li><strong>Trend:</strong> long or short gold, silver, base metals, oil, commodities, energy, miners and BTC, each sized to 10% volatility.</li>
+          <li><strong>Option premium:</strong> each month, sell a gold put spread and spend the credit on gold calls (priced from the gold volatility index), plus the VIX spike fade.</li>
+          <li><strong>Each Friday:</strong> give the four groups equal risk, then scale the book to a 40% volatility target, capped at 6×.</li>
+        </ul>
+        <h3>Signals today</h3>
+        <div class="sig" id="signals"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Equity curves</h2>
+    <div class="card"><h3>Growth of $1 (log scale)</h3><div class="chart tall"><canvas id="c_ec" aria-label="Equity curves of the Frontier plan and benchmarks"></canvas></div>
+      <div class="chart short"><canvas id="c_dd" aria-label="Drawdowns"></canvas></div></div>
+    <div class="warn"><strong>The 2016–17 crypto boom flatters the full-period numbers.</strong> The plan made +181% in 2017 alone. The fair test is the 2021–2026 half, which was never used to choose any setting. It's shown next.</div>
+    <div class="card"><h3>Test period only: Jan 2021 – Nov 2026 (growth of $1)</h3><div class="chart"><canvas id="c_test" aria-label="Test-period equity curves"></canvas></div></div>
+    <div class="tbl"><table id="t_perf"><thead><tr><th></th><th>CAGR full</th><th>CAGR 2021–26</th><th>Sharpe 2021–26</th><th>Max DD 2021–26</th><th>Worst year</th><th>Best year</th></tr></thead><tbody></tbody></table></div>
+    <div class="card"><h3>Calendar-year returns vs QQQ and gold</h3><div class="chart"><canvas id="c_years" aria-label="Yearly returns"></canvas></div></div>
+    <div class="card"><h3>Each sleeve on its own (growth of $1, log scale)</h3><div class="chart tall"><canvas id="c_sleeves" aria-label="Sleeve equity curves"></canvas></div>
+      <p class="muted">Click a legend item to hide or show a sleeve. BTC with its 50-day exit made about 69% a year with a −61% drawdown. It is the strongest sleeve and also the one that needs the hardest cap.</p></div>
+  </section>
+
+  <section>
+    <h2>Rolling-window optimisation</h2>
+    <p>Every January, the walk-forward version re-picks the weighting method, volatility target (20–40%) and leverage cap (3×, 4× or 6×) from the previous 3 years only. It chooses the highest trailing return with a drawdown no worse than −30%.</p>
+    <div class="two">
+      <div class="tbl"><table id="t_picks"><thead><tr><th>Year</th><th>Walk-forward picked</th></tr></thead><tbody></tbody></table></div>
+      <div class="card"><p>Here re-optimising <strong>came close to the fixed plan</strong>: 26.5% against 28.1% a year in 2021–2026. That's because it kept picking the same 35–40% targets. As with Goal-25, it never beat the fixed setting, so <strong>fix the settings</strong>.</p></div>
+    </div>
+    <div class="two">
+      <div class="card"><h3>Rolling 3-year CAGR</h3><div class="chart"><canvas id="c_rc" aria-label="Rolling 36-month CAGR"></canvas></div></div>
+      <div class="card"><h3>Rolling 3-year Sharpe</h3><div class="chart"><canvas id="c_rs" aria-label="Rolling 36-month Sharpe"></canvas></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The edge we can deliver</h2>
+    <div class="tbl"><table id="t_edge"><thead><tr><th>Monthly, full period</th><th>Alpha /yr</th><th>t-stat</th><th>Beta</th><th>Extra CAGR</th><th>Up capture</th><th>Down capture</th><th>12-month windows ahead</th></tr></thead><tbody></tbody></table></div>
+    <ul class="tight">
+      <li><strong>Against QQQ, SPY and gold:</strong> large and statistically clear alpha (t-stats of 3–3.5). The plan captured more of their up months than their down months.</li>
+      <li><strong>Against Bitcoin:</strong> the plan made less (−24% a year) but with a third of BTC's risk. It caught only 22% of BTC's down months. Owning BTC outright paid more in the boom, but lost 75% in 2018 and 64% in 2022.</li>
+      <li><strong>Diversification is real:</strong> crypto, hard-asset trend, the gold option sleeve and the VIX fade are nearly uncorrelated (mostly below 0.3). That's why the unlevered core reached a Sharpe of 1.24 over the full period and 0.93 in 2021–2026.</li>
+    </ul>
+    <div class="two">
+      <div class="card"><h3>Range of 5-year outcomes (from 2021–2026 returns only)</h3><div class="chart"><canvas id="c_boot" aria-label="Distribution of 5-year CAGR"></canvas></div>
+        <p class="muted">10,000 paths built from random 6-month blocks of the test-period returns, so the 2016–17 boom is excluded.</p></div>
+      <div class="card" style="gap:14px">
+        <div class="tbl"><table id="t_boot"><thead><tr><th>5-year CAGR</th><th>Plan</th><th>QQQ</th><th>BTC</th></tr></thead><tbody></tbody></table></div>
+        <div class="tbl"><table id="t_hair"><thead><tr><th>If the live Sharpe is lower</th><th>Sharpe</th><th>Expected CAGR (approx.)</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="warn"><strong>What to expect live: about 18–25% a year.</strong> That is based on the 2021–2026 test results with a 0–25% Sharpe discount. Losing years of −17% (2018, 2022) and drawdowns of about −30% should be expected. A 25%+ year came in roughly half of the simulated 5-year paths.</div>
+  </section>
+
+  <section>
+    <h2>Risks and how to run it</h2>
+    <ul class="tight">
+      <li><strong>Crypto crash days:</strong> a day like 12 March 2020 (BTC −40%, ETH −45%) costs about 18–21% of the account at the capped sizes. Never lift the crypto caps.</li>
+      <li><strong>Metals crash days:</strong> the worst day in the backtest was 30 January 2026 (−17%), when gold and silver collapsed together. The gold option sleeve, the rotation and the trend sleeve all lost at once.</li>
+      <li><strong>SpaceX has five months of trading history.</strong> It has already fallen 49% from peak at times, and its volatility is about 80% a year. Treat the space sleeve as high-risk growth until it has a longer track record.</li>
+      <li><strong>Practical tools:</strong>
+        <ul class="tight">
+          <li>spot BTC/ETH ETFs (IBIT, ETHA) or CME micro futures for crypto;</li>
+          <li>ETFs for the rotation and space sleeves;</li>
+          <li>micro futures (MGC, SIL, MCL, MES) for trend;</li>
+          <li>GLD listed options for the put-spread sleeve;</li>
+          <li>a capped SVXY position for the spike fade.</li>
+        </ul></li>
+      <li><strong>Modelled option prices, free data and a short history (11 years):</strong> paper-trade it first.</li>
+    </ul>
+  </section>
+
+  <footer>Code: <span class="mono">research/leaps_vix/study_hard25.py</span> and <span class="mono">build_hard_page.py</span>. The Goal-25 plan and the full research paper are separate pages.</footer>
+</main>
+
+/*__HELPERS__*/
+function tables() {
+  const P = STATS.perf_full, T = STATS.perf_test, G = "Frontier Plan";
+  const kp = [
+    [pct(T[G].cagr), "CAGR 2021–26 (unseen test)", `QQQ ${pct(T.QQQ.cagr)} · BTC ${pct(T.BTC.cagr)} · GLD ${pct(T.GLD.cagr)}`],
+    [pct(P[G].cagr), "CAGR full period", "flattered by the 2016–17 crypto boom"],
+    [T[G].sharpe.toFixed(2), "Sharpe 2021–26", `QQQ ${T.QQQ.sharpe.toFixed(2)} · BTC ${T.BTC.sharpe.toFixed(2)}`],
+    [pct(T[G].max_dd, 0), "Worst drawdown 2021–26", `BTC ${pct(T.BTC.max_dd, 0)}`],
+    [pct(STATS.edges["Frontier Plan vs QQQ"].alpha_ann), "Alpha vs QQQ per year", `t-stat ${STATS.edges["Frontier Plan vs QQQ"].alpha_tstat.toFixed(1)}`],
+    [pct(STATS.bootstrap[G].p_cagr_above_25, 0), "Chance a 5-year stretch beats 25%", "from test-period returns"],
+  ];
+  document.getElementById("kpis").innerHTML = kp.map(([v, l, c]) => `<div><span class="v">${v}</span><span class="l">${l}</span><span class="c">${c}</span></div>`).join("");
+
+  const sx = STATS.spacex;
+  document.getElementById("spcx_text").innerHTML = `SpaceX listed as <strong>SPCX</strong> on ${sx.first_date}. It first closed at $${sx.first_close.toFixed(2)} and is now at $${sx.last_close.toFixed(2)} (${sgn(sx.return_since_listing)} since listing). It has fallen as much as ${pct(sx.max_dd, 0)} from its peak, with about ${pct(sx.ann_vol, 0)} annual volatility.`;
+
+  const group = { btc_tilt: "Crypto", eth_tilt: "Crypto", hard_rotation: "Frontier growth", space: "Frontier growth",
+                  trend_hard: "Trend", psc_gld: "Option premium", spike_fade: "Option premium" };
+  document.querySelector("#t_weights tbody").innerHTML = Object.keys(group).map(k =>
+    `<tr><td>${DATA.names[k]}</td><td style="text-align:left">${group[k]}</td><td>${STATS.sleeve_perf[k].sharpe.toFixed(2)}</td><td>${STATS.latest_weights[k].toFixed(2)}×</td><td>${STATS.avg_weights[k].toFixed(2)}×</td></tr>`).join("");
+
+  const s = DATA.signals;
+  const card = (lab, x, upTxt, dnTxt) => { const up = x.close > x.ma50;
+    return [lab + " vs 50-day", `${x.close} vs ${x.ma50}`, up ? ["up", upTxt] : ["down", dnTxt]]; };
+  document.getElementById("signals").innerHTML = [
+    card("BTC", s.BTC, "Above: hold", "Below: in cash"), card("ETH", s.ETH, "Above: hold", "Below: in cash"),
+    card("Gold (GLD)", s.GLD, "Above", "Below"), card("SpaceX (SPCX)", s.SPCX, "Above", "Below"),
+  ].map(([t, v, [cls, txt]]) => `<div><span class="muted">${t}</span><span class="mono">${v}</span><span class="pill ${cls}">${txt}</span></div>`).join("")
+    + `<p class="muted" style="grid-column:1/-1">As of ${s.as_of}. The space sleeve tilts on the proxy chain's own 50-day average, not on SPCX alone.</p>`;
+
+  const rows = ["Frontier Plan", "Walk-forward (3-yr look-back)", "Unlevered core", "BTC", "QQQ", "GLD", "XLE", "SPY", "Space proxy (untilted)"];
+  document.querySelector("#t_perf tbody").innerHTML = rows.map(r =>
+    `<tr class="${r === G ? "hl" : ""}"><td>${r}</td><td>${r.startsWith("Walk") ? "—" : pct(P[r].cagr)}</td><td>${pct(T[r].cagr)}</td><td>${T[r].sharpe.toFixed(2)}</td><td>${pct(T[r].max_dd, 0)}</td><td>${pct(P[r].worst_year)}</td><td>${pct(P[r].best_year, 0)}</td></tr>`).join("");
+
+  const nice = k => k.replace("cluster", "four-group").replace("riskpar", "risk parity").replace(/_vt(\d+)_cap(\d+)/, " · $1% vol · $2× cap");
+  document.querySelector("#t_picks tbody").innerHTML = Object.entries(STATS.wf_picks_3y).map(([y, k]) =>
+    `<tr><td>${y}</td><td style="text-align:left">${nice(k)}</td></tr>`).join("") + `<tr class="hl"><td>Fixed plan</td><td style="text-align:left">${nice(STATS.chosen)}</td></tr>`;
+
+  document.querySelector("#t_edge tbody").innerHTML = Object.entries(STATS.edges).map(([k, e]) =>
+    `<tr class="${k.endsWith("QQQ") ? "hl" : ""}"><td>${k}</td><td class="${e.alpha_ann >= 0 ? "pos" : "neg"}">${sgn(e.alpha_ann)}</td><td>${e.alpha_tstat.toFixed(1)}</td><td>${e.beta.toFixed(2)}</td><td class="${e.excess_cagr >= 0 ? "pos" : "neg"}">${sgn(e.excess_cagr)}</td><td>${pct(e.up_capture, 0)}</td><td>${pct(e.down_capture, 0)}</td><td>${pct(e.pct_12m_windows_ahead, 0)}</td></tr>`).join("");
+
+  const B = STATS.bootstrap, lab = { "5": "Bad (5th percentile)", "25": "Below average (25th)", "50": "Median", "75": "Above average (75th)", "95": "Great (95th)" };
+  document.querySelector("#t_boot tbody").innerHTML = ["5", "25", "50", "75", "95"].map(p =>
+    `<tr class="${p === "50" ? "hl" : ""}"><td>${lab[p]}</td><td>${pct(B[G].cagr_pct[p])}</td><td>${pct(B.QQQ.cagr_pct[p])}</td><td>${pct(B.BTC.cagr_pct[p])}</td></tr>`).join("")
+    + `<tr><td>Chance above 25%</td><td>${pct(B[G].p_cagr_above_25, 0)}</td><td>${pct(B.QQQ.p_cagr_above_25, 0)}</td><td>${pct(B.BTC.p_cagr_above_25, 0)}</td></tr>`
+    + `<tr><td>Chance of a loss</td><td>${pct(B[G].p_loss)}</td><td>${pct(B.QQQ.p_loss)}</td><td>${pct(B.BTC.p_loss)}</td></tr>`
+    + `<tr><td>Typical worst drawdown</td><td>${pct(B[G].dd_median, 0)}</td><td>${pct(B.QQQ.dd_median, 0)}</td><td>${pct(B.BTC.dd_median, 0)}</td></tr>`;
+  document.querySelector("#t_hair tbody").innerHTML = STATS.haircut.map(h =>
+    `<tr class="${h.haircut === 0.25 ? "hl" : ""}"><td>${h.haircut === 0 ? "Same as 2021–26 test" : "Sharpe " + (h.haircut * 100) + "% lower"}</td><td>${h.sharpe.toFixed(2)}</td><td>${pct(h.expected_cagr)}</td></tr>`).join("");
+}
+
+function render() {
+  charts.splice(0).forEach(c => c.destroy());
+  const S = PAL(), ink3 = css("--ink-3");
+  const sc = line("c_spcx", DATA.spcx, [S[6]], { log: false, fmt: v => "$" + v.toFixed(0), tip: v => "$" + v.toFixed(2) });
+  sc.options.scales.x.ticks.callback = function (v) { return this.getLabelForValue(v).slice(5); };
+  sc.options.plugins.legend.display = false; sc.update(); charts.push(sc);
+  charts.push(line("c_ec", DATA.ec, [S[0], S[2], S[3], S[1], ink3], { dash: { "GLD": [2, 3] } }));
+  const dd = line("c_dd", DATA.dd, [S[0], S[1], S[3]], { log: false, fmt: v => pct(v, 0), tip: v => pct(v), yMax: 0 });
+  dd.options.plugins.legend.display = false; dd.update(); charts.push(dd);
+  charts.push(line("c_test", DATA.test_ec, [S[0], S[6], S[1], ink3, S[3]], { dash: { "GLD": [2, 3] } }));
+  const Y = DATA.years;
+  charts.push(bars("c_years", Y.labels, [
+    { label: "Frontier Plan", data: Y.series["Frontier Plan"], backgroundColor: S[0] },
+    { label: "QQQ", data: Y.series.QQQ, backgroundColor: S[1] },
+    { label: "GLD", data: Y.series.GLD, backgroundColor: ink3 } ]));
+  charts.push(line("c_sleeves", DATA.sleeves, S));
+  charts.push(line("c_rc", DATA.roll_cagr, [S[0], S[3], ink3, S[1]], { log: false, fmt: v => pct(v, 0), tip: v => pct(v) }));
+  charts.push(line("c_rs", DATA.roll_sharpe, [S[0], S[3], ink3, S[1]], { log: false, fmt: v => v.toFixed(1), tip: v => v.toFixed(2) }));
+  const b = DATA.boot, lbl = b.bins.slice(0, -1).map((x, i) => `${(x * 100).toFixed(0)}–${(b.bins[i + 1] * 100).toFixed(0)}%`);
+  const bc = bars("c_boot", lbl, [
+    { label: "Frontier Plan", data: b["Frontier Plan"].map(v => v / 10000), backgroundColor: S[0] },
+    { label: "QQQ", data: b.QQQ.map(v => v / 10000), backgroundColor: S[1] } ], { fmt: v => pct(v, 0), tip: v => pct(v) + " of paths" });
+  bc.options.scales.x.ticks.callback = function (v) { return this.getLabelForValue(v).split("–")[0] + "%"; };
+  bc.options.scales.x.ticks.maxTicksLimit = 9; bc.update(); charts.push(bc);
+}
+
+tables();
+if (window.Chart) {
+  Chart.defaults.font.family = css("--f-ui");
+  render();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+}
+</script>
