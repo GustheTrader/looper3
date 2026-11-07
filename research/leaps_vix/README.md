@@ -18,3 +18,5 @@ python build_page.py              # interactive paper.html from results/
 ```
 
 Finance hosts must be reachable (the `looper3` cloud environment allows them).
+python study_goal25_wf.py          # walk-forward re-optimisation, rolling windows, edge, bootstrap
+python build_goal_page.py          # goal25.html plan page

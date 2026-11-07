@@ -1,0 +1,306 @@
+<title>Goal-25 Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a trading-desk plan sheet. Summary strip first, then evidence sections
+   (curves -> rolling optimisation -> edge), each a chart plus the table behind it. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --ink: #11151b; --ink-2: #49515e; --ink-3: #707885;
+  --rule: #dde1e7; --grid: #e9ecf0; --accent: #1f5fae; --accent-soft: #e7eef8;
+  --good: #0c7a4a; --bad: #b3261e; --warn-bg: #fdf3e2; --warn-ink: #7a4b00;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  --f-ui: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13161b; --surface: #1a1e25; --ink: #e8ebf0; --ink-2: #b4bbc7; --ink-3: #8a929f; --rule: #2b313b; --grid: #252a32;
+    --accent: #7fb0ec; --accent-soft: #1e2938; --good: #4cc38a; --bad: #f2867d; --warn-bg: #3a2c12; --warn-ink: #f2c97a;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13161b; --surface: #1a1e25; --ink: #e8ebf0; --ink-2: #b4bbc7; --ink-3: #8a929f; --rule: #2b313b; --grid: #252a32;
+  --accent: #7fb0ec; --accent-soft: #1e2938; --good: #4cc38a; --bad: #f2867d; --warn-bg: #3a2c12; --warn-ink: #f2c97a;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 15.5px; line-height: 1.55; }
+.page { max-width: 1060px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 72px; display: grid; gap: 48px; }
+section { display: grid; gap: 16px; min-width: 0; }
+h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.15; }
+h2 { font-size: 1.35rem; font-weight: 600; padding-top: 12px; border-top: 1px solid var(--rule); }
+h3 { font-size: 0.95rem; font-weight: 600; }
+p { margin: 0; max-width: 72ch; }
+.eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); }
+.dek { color: var(--ink-2); font-size: 1.05rem; max-width: 70ch; }
+.muted { color: var(--ink-3); font-size: 0.85rem; }
+ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 7px; max-width: 76ch; }
+.warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 6px; padding: 10px 14px; font-size: 0.9rem; max-width: 76ch; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.kpis > div { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+.kpis .v { font-family: var(--f-data); font-size: 1.55rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.kpis .l { font-size: 0.78rem; color: var(--ink-3); }
+.kpis .c { font-size: 0.78rem; color: var(--ink-2); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+.chart { position: relative; height: 320px; }
+.chart.tall { height: 380px; }
+.chart.short { height: 170px; }
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; }
+th, td { padding: 7px 11px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); background: var(--bg); }
+tbody tr:last-child td { border-bottom: 0; }
+tr.hl td { background: var(--accent-soft); font-weight: 600; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.sig { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.sig > div { border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); padding: 10px 12px; display: grid; gap: 4px; }
+.pill { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; width: fit-content; }
+.pill.on { background: var(--accent-soft); color: var(--accent); }
+.pill.up { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+.pill.down { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
+.mono { font-family: var(--f-data); font-size: 0.85rem; }
+footer { font-size: 0.8rem; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (max-width: 560px) { .chart { height: 260px; } .chart.tall { height: 300px; } }
+</style>
+
+<main class="page">
+  <header style="display:grid;gap:14px">
+    <div class="eyebrow">looper3 · plan sheet</div>
+    <h1>Goal-25: higher Sharpe, 25% a year</h1>
+    <p class="dek">Eight return streams with risk balanced across four groups, levered to a 40% volatility target with hard limits on each sleeve. Below: the equity curves, what happens when we re-optimise on rolling windows, and the edge we can realistically deliver.</p>
+    <div class="kpis" id="kpis"></div>
+    <p class="muted">Backtest March 2008 – September 2026, monthly, net of trading costs and borrowing. Option sleeves use modelled prices calibrated to real indices. Not investment advice.</p>
+  </header>
+
+  <section>
+    <h2>The plan</h2>
+    <div class="two">
+      <div class="card">
+        <h3>Sleeves and current sizing (× account value)</h3>
+        <div class="tbl"><table id="t_weights"><thead><tr><th>Sleeve</th><th>Group</th><th>Now</th><th>Average</th></tr></thead><tbody></tbody></table></div>
+        <p class="muted">Sizes are notional exposure as a multiple of the account, so the total can exceed 1×. Hard limits: spike fade ≤ 0.25×, momentum ≤ 1×, each put-spread sleeve ≤ 0.5×.</p>
+      </div>
+      <div class="card">
+        <h3>How it is run</h3>
+        <ul class="tight">
+          <li><strong>Each Friday,</strong> size every sleeve by the inverse of its 63-day volatility, so each of the four groups (growth, option premium, trend, momentum) carries equal risk.</li>
+          <li><strong>Then scale the whole book</strong> to a 40% annual volatility target, at most 8× total exposure.</li>
+          <li><strong>Each month end:</strong> re-pick the leaders, refresh the trend signals, roll the put spread into calls, and sell the put-write.</li>
+          <li><strong>Daily:</strong> check the 50-day averages and the spike-fade signal.</li>
+        </ul>
+        <h3>Signals today</h3>
+        <div class="sig" id="signals"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Equity curves</h2>
+    <div class="card"><h3>Growth of $1 (log scale)</h3><div class="chart tall"><canvas id="c_ec" aria-label="Equity curves of the plan, QQQ and SPY"></canvas></div>
+      <div class="chart short"><canvas id="c_dd" aria-label="Drawdowns"></canvas></div></div>
+    <div class="card"><h3>Calendar-year returns</h3><div class="chart"><canvas id="c_years" aria-label="Yearly returns of the plan, QQQ and SPY"></canvas></div></div>
+    <div class="tbl"><table id="t_perf"><thead><tr><th>Mar 2008 – Sep 2026</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Sortino</th><th>Max DD</th><th>Worst year</th><th>Best year</th><th>Years ≥ 25%</th></tr></thead><tbody></tbody></table></div>
+    <div class="card"><h3>Each sleeve on its own (growth of $1, log scale)</h3><div class="chart tall"><canvas id="c_sleeves" aria-label="Equity curves of the eight sleeves"></canvas></div>
+      <p class="muted">Click a legend item to hide or show a sleeve. Put-spread and trend sleeves are per $1 of exposure on top of T-bill cash.</p></div>
+  </section>
+
+  <section>
+    <h2>Rolling-window optimisation</h2>
+    <p>Can re-tuning help? Every January, the walk-forward version looks back over the previous 3 or 5 years only. It re-picks the weighting method (four-group, risk parity, or trailing-Sharpe budgets), the volatility target (25–40%) and the leverage cap (6× or 8×), choosing the highest trailing return whose drawdown was no worse than −30%. It then trades that choice for the next year.</p>
+    <div class="card"><h3>Fixed plan vs walk-forward re-optimisation (rebased to Jan 2014)</h3><div class="chart"><canvas id="c_wf" aria-label="Fixed plan versus walk-forward versions and QQQ"></canvas></div></div>
+    <div class="two">
+      <div class="tbl"><table id="t_wf"><thead><tr><th>Since Jan 2012</th><th>CAGR</th><th>Sharpe</th><th>Max DD</th></tr></thead><tbody></tbody></table></div>
+      <div class="tbl"><table id="t_picks"><thead><tr><th>Year</th><th>3-yr look-back picked</th><th>5-yr look-back picked</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="warn"><strong>Re-optimising hurt.</strong> Both walk-forward versions trailed the fixed plan by about 4–5% a year and fell short of QQQ. After the 2022 drawdown, the 3-year version cut its volatility target to 25% for 2024–25 and missed the rebound. The same thing happened in the momentum research: chasing the recent best setting buys noise. <strong>Fix the settings, and don't re-tune them yearly.</strong> The walk-forward rows only start in 2012 (3-year) and 2014 (5-year), once enough history exists.</div>
+    <div class="two">
+      <div class="card"><h3>Rolling 3-year CAGR</h3><div class="chart"><canvas id="c_rc" aria-label="Rolling 36-month CAGR"></canvas></div></div>
+      <div class="card"><h3>Rolling 3-year Sharpe</h3><div class="chart"><canvas id="c_rs" aria-label="Rolling 36-month Sharpe ratio"></canvas></div></div>
+    </div>
+    <p class="muted">Each point is the result of the previous 36 months, which shows whether the edge holds across time or comes from one stretch.</p>
+  </section>
+
+  <section>
+    <h2>The edge we can deliver</h2>
+    <div class="tbl"><table id="t_edge"><thead><tr><th>Monthly, full period</th><th>Alpha /yr</th><th>t-stat</th><th>Beta</th><th>Extra CAGR</th><th>Info ratio</th><th>Up capture</th><th>Down capture</th><th>12-month windows ahead</th></tr></thead><tbody></tbody></table></div>
+    <ul class="tight">
+      <li><strong>Where the edge comes from:</strong> it captures more of the benchmark's up months than its down months. The gap shows up most in the crisis and recovery years (2008–2011), when trend and spike-fade earn while stocks fall.</li>
+      <li><strong>Since 2012 the gap is smaller.</strong> The plan returned about 3% a year more than QQQ, but with a lower Sharpe than QQQ's unusually strong run.</li>
+    </ul>
+    <div class="two">
+      <div class="card"><h3>Range of 5-year outcomes (block bootstrap, 10,000 paths)</h3><div class="chart"><canvas id="c_boot" aria-label="Distribution of 5-year CAGR"></canvas></div>
+        <p class="muted">Each path is stitched together from random 6-month blocks of the backtest's own monthly returns.</p></div>
+      <div class="card" style="gap:14px">
+        <div class="tbl"><table id="t_boot"><thead><tr><th>5-year CAGR</th><th>Plan</th><th>QQQ</th><th>SPY</th></tr></thead><tbody></tbody></table></div>
+        <div class="tbl"><table id="t_hair"><thead><tr><th>If the live Sharpe is lower</th><th>Sharpe</th><th>Expected CAGR (approx.)</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="warn"><strong>What to expect live.</strong> Live strategies usually keep only part of their backtest Sharpe, because of fills, model error and luck in the sample. A 25% cut is a common rule of thumb. At this volatility, that points to <strong>about 15–22% a year</strong>, with 25% in roughly half of 5-year periods, rather than a sure 25%. Drawdowns of 25–35% should be expected along the way.</div>
+  </section>
+
+  <section>
+    <h2>Risks and how to run it</h2>
+    <ul class="tight">
+      <li><strong>Leverage of about 5× total exposure</strong> needs a futures or portfolio-margin account. Practical tools: micro futures (MES, MNQ, ZN, GC, 6E) for trend; LEAPS and put-spread-funded calls for the equity sleeves; SVXY, capped, for the spike fade; cash-secured SPY puts for put-write.</li>
+      <li><strong>Gap risk:</strong> a February-2018 style VIX shock costs about 12.5% of the account with the limits in place. Without them it would be 72%. Never lift the spike-fade limit.</li>
+      <li><strong>Put spreads sold to buy calls:</strong> a fast fall through the short put loses the full spread width that month.</li>
+      <li><strong>Modelled option prices and free data:</strong> results for the option sleeves are estimates. Validate on real quotes in a paper-trading account before committing capital.</li>
+      <li><strong>Momentum long/short</strong> uses survivorship-free research portfolios. Live trading needs a broad stock basket or ETF pair, and will differ.</li>
+    </ul>
+  </section>
+
+  <footer>Code: <span class="mono">research/leaps_vix/study_goal25.py</span>, <span class="mono">study_goal25_wf.py</span>, <span class="mono">build_goal_page.py</span>. The full research paper covers each sleeve in depth.</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+const DATA = /*__DATA__*/{};
+const STATS = /*__STATS__*/{};
+const charts = [];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pct = (v, d = 1) => (v == null || isNaN(v)) ? "—" : (v * 100).toFixed(d) + "%";
+const sgn = (v, d = 1) => (v >= 0 ? "+" : "") + pct(v, d);
+const money = v => v >= 100 ? "$" + v.toFixed(0) : v >= 1 ? "$" + v.toFixed(2) : "$" + v.toPrecision(2);
+const PAL = () => ["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"].map(css);
+
+function base() {
+  const ink2 = css("--ink-2"), grid = css("--grid"), font = css("--f-ui");
+  return {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { position: "top", align: "start", labels: { color: ink2, boxWidth: 12, boxHeight: 2, font: { family: font, size: 11 } } },
+      tooltip: { backgroundColor: css("--surface"), titleColor: css("--ink"), bodyColor: css("--ink-2"), borderColor: css("--rule"),
+                 borderWidth: 1, padding: 10, boxPadding: 4, usePointStyle: true },
+    },
+    scales: {
+      x: { ticks: { color: ink2, maxTicksLimit: 8, maxRotation: 0, font: { size: 11 }, callback(v) { return this.getLabelForValue(v).slice(0, 4); } },
+           grid: { display: false }, border: { color: grid } },
+      y: { ticks: { color: ink2, font: { size: 11 } }, grid: { color: grid }, border: { display: false } },
+    },
+  };
+}
+function line(id, d, colors, { log = true, fmt = money, tip = money, yMax, dash = {} } = {}) {
+  const ds = Object.entries(d.series).map(([name, data], i) => ({
+    label: name, data, borderColor: colors[i], backgroundColor: colors[i], borderWidth: name.startsWith("Goal") ? 2.4 : 1.6,
+    borderDash: dash[name] || [], pointRadius: 0, pointHoverRadius: 4, tension: 0, spanGaps: true }));
+  const o = base();
+  o.scales.y.type = log ? "logarithmic" : "linear";
+  if (yMax !== undefined) o.scales.y.max = yMax;
+  o.scales.y.ticks.callback = v => fmt(v);
+  if (log) o.scales.y.afterBuildTicks = axis => {
+    const lo = axis.min, hi = axis.max, dec = Math.log10(hi / lo), steps = dec > 2.5 ? [1] : [1, 2, 5], out = [];
+    for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+      for (const k of steps) { const t = k * 10 ** e; if (t >= lo * 0.999 && t <= hi * 1.001) out.push({ value: t }); }
+    axis.ticks = out;
+  };
+  o.plugins.tooltip.callbacks = { label: c => ` ${c.dataset.label}: ${c.raw == null ? "—" : tip(c.raw)}` };
+  return new Chart(document.getElementById(id), { type: "line", data: { labels: d.labels, datasets: ds }, options: o });
+}
+function bars(id, labels, sets, { fmt = v => pct(v, 0), tip = v => pct(v) } = {}) {
+  const o = base();
+  o.scales.x.ticks.callback = function (v) { return this.getLabelForValue(v); };
+  o.scales.x.ticks.maxTicksLimit = 30; o.scales.x.ticks.autoSkip = true;
+  o.scales.y.ticks.callback = v => fmt(v);
+  o.plugins.legend.labels = { ...o.plugins.legend.labels, boxWidth: 12, boxHeight: 12 };
+  o.plugins.tooltip.callbacks = { label: c => ` ${c.dataset.label}: ${tip(c.raw)}` };
+  return new Chart(document.getElementById(id), { type: "bar", options: o, data: { labels, datasets: sets.map(s => ({ borderRadius: 2, ...s })) } });
+}
+
+function tables() {
+  const P = STATS.perf_full, G = "Goal-25 Safe";
+  const k = [
+    [pct(P[G].cagr), "CAGR, Goal-25 Safe", `QQQ ${pct(P.QQQ.cagr)} · SPY ${pct(P.SPY.cagr)}`],
+    [P[G].sharpe.toFixed(2), "Sharpe", `QQQ ${P.QQQ.sharpe.toFixed(2)} · SPY ${P.SPY.sharpe.toFixed(2)}`],
+    [P["Unlevered core (Sharpe ~1.0)"].sharpe.toFixed(2), "Sharpe before leverage", "four-group risk balancing"],
+    [pct(P[G].max_dd, 0), "Worst drawdown", `QQQ ${pct(P.QQQ.max_dd, 0)}`],
+    [pct(STATS.edges["Goal-25 Safe vs QQQ"].alpha_ann), "Alpha vs QQQ per year", `t-stat ${STATS.edges["Goal-25 Safe vs QQQ"].alpha_tstat.toFixed(1)}`],
+    [pct(STATS.bootstrap[G].p_cagr_above_25, 0), "Chance a 5-year stretch beats 25%", `QQQ ${pct(STATS.bootstrap.QQQ.p_cagr_above_25, 0)}`],
+  ];
+  document.getElementById("kpis").innerHTML = k.map(([v, l, c]) => `<div><span class="v">${v}</span><span class="l">${l}</span><span class="c">${c}</span></div>`).join("");
+
+  const groups = { "QQQ with 50-day tilt": "Growth", "QQQ put spread → calls": "Growth", "SPY put spread → calls": "Growth",
+    "Leaders, dual momentum": "Growth", "Spike fade": "Option premium", "Put-write index": "Option premium",
+    "Cross-asset trend": "Trend", "Momentum L/S (vol-scaled)": "Momentum" };
+  document.querySelector("#t_weights tbody").innerHTML = Object.keys(groups).map(n =>
+    `<tr><td>${n}</td><td style="text-align:left">${groups[n]}</td><td>${DATA.weights[n].toFixed(2)}×</td><td>${DATA.avg_weights[n].toFixed(2)}×</td></tr>`).join("");
+
+  const s = DATA.signals;
+  const up = t => s[t].close > s[t].ma50;
+  const fadeTxt = s.fade_on ? "On: short VIX futures" : "Off";
+  document.getElementById("signals").innerHTML = [
+    ["SPY vs 50-day", `${s.SPY.close} vs ${s.SPY.ma50}`, up("SPY") ? ["up", "Above"] : ["down", "Below"]],
+    ["QQQ vs 50-day", `${s.QQQ.close} vs ${s.QQQ.ma50}`, up("QQQ") ? ["up", "Above: full size"] : ["down", "Below: half size"]],
+    ["VIX vs VIX3M", `${s.VIX} vs ${s.VIX3M}`, s.VIX >= s.VIX3M ? ["down", "Inverted: stress"] : ["up", "Normal"]],
+    ["Spike fade", "VIX ≥ 25, back below VIX3M, 15% off high", [s.fade_on ? "on" : "up", fadeTxt]],
+    ["Leaders (top 3)", s.leaders.join(", "), ["on", "Held"]],
+  ].map(([t, v, [cls, txt]]) => `<div><span class="muted">${t}</span><span class="mono">${v}</span><span class="pill ${cls}">${txt}</span></div>`).join("")
+    + `<p class="muted" style="grid-column:1/-1">As of ${s.as_of}.</p>`;
+
+  const rows = ["Goal-25 Safe", "No sleeve limits (unsafe)", "Unlevered core (Sharpe ~1.0)", "QQQ", "SPY"];
+  document.querySelector("#t_perf tbody").innerHTML = rows.map(r => { const x = P[r];
+    return `<tr class="${r === G ? "hl" : ""}"><td>${r}</td><td>${pct(x.cagr)}</td><td>${pct(x.ann_vol)}</td><td>${x.sharpe.toFixed(2)}</td><td>${x.sortino.toFixed(2)}</td><td>${pct(x.max_dd, 0)}</td><td>${pct(x.worst_year)}</td><td>${pct(x.best_year)}</td><td>${pct(x.pct_years_25, 0)}</td></tr>`; }).join("");
+
+  const W = STATS.perf_since_2012;
+  document.querySelector("#t_wf tbody").innerHTML = ["Goal-25 Safe", "Walk-forward (3-yr look-back)", "Walk-forward (5-yr look-back)", "QQQ", "SPY"].map(r =>
+    `<tr class="${r === G ? "hl" : ""}"><td>${r}${r.includes("5-yr") ? " (from 2014)" : ""}</td><td>${pct(W[r].cagr)}</td><td>${W[r].sharpe.toFixed(2)}</td><td>${pct(W[r].max_dd, 0)}</td></tr>`).join("");
+  const nice = k => k.replace("_safe", "").replace("sharpe_trailing", "trailing-Sharpe").replace("cluster", "four-group").replace("riskpar", "risk parity").replace(/_vt(\d+)_cap(\d+)/, " · $1% vol · $2× cap");
+  const years = Object.keys(STATS.wf_picks_3y);
+  document.querySelector("#t_picks tbody").innerHTML = years.map(y =>
+    `<tr><td>${y}</td><td style="text-align:left">${nice(STATS.wf_picks_3y[y])}</td><td style="text-align:left">${STATS.wf_picks_5y[y] ? nice(STATS.wf_picks_5y[y]) : "—"}</td></tr>`).join("");
+
+  document.querySelector("#t_edge tbody").innerHTML = Object.entries(STATS.edges).map(([k, e]) =>
+    `<tr class="${k === "Goal-25 Safe vs QQQ" ? "hl" : ""}"><td>${k.replace("Walk-forward (3-yr look-back)", "Walk-forward 3-yr")}</td><td class="${e.alpha_ann >= 0 ? "pos" : "neg"}">${sgn(e.alpha_ann)}</td><td>${e.alpha_tstat.toFixed(1)}</td><td>${e.beta.toFixed(2)}</td><td class="${e.excess_cagr >= 0 ? "pos" : "neg"}">${sgn(e.excess_cagr)}</td><td>${e.info_ratio.toFixed(2)}</td><td>${pct(e.up_capture, 0)}</td><td>${pct(e.down_capture, 0)}</td><td>${pct(e.pct_12m_windows_ahead, 0)}</td></tr>`).join("");
+
+  const B = STATS.bootstrap, ps = ["5", "25", "50", "75", "95"];
+  const lab = { "5": "Bad (5th percentile)", "25": "Below average (25th)", "50": "Median", "75": "Above average (75th)", "95": "Great (95th)" };
+  document.querySelector("#t_boot tbody").innerHTML = ps.map(p =>
+    `<tr class="${p === "50" ? "hl" : ""}"><td>${lab[p]}</td><td>${pct(B[G].cagr_pct[p])}</td><td>${pct(B.QQQ.cagr_pct[p])}</td><td>${pct(B.SPY.cagr_pct[p])}</td></tr>`).join("")
+    + `<tr><td>Chance above 25%</td><td>${pct(B[G].p_cagr_above_25, 0)}</td><td>${pct(B.QQQ.p_cagr_above_25, 0)}</td><td>${pct(B.SPY.p_cagr_above_25, 0)}</td></tr>`
+    + `<tr><td>Chance of a loss</td><td>${pct(B[G].p_loss)}</td><td>${pct(B.QQQ.p_loss)}</td><td>${pct(B.SPY.p_loss)}</td></tr>`
+    + `<tr><td>Typical worst drawdown</td><td>${pct(B[G].dd_median, 0)}</td><td>${pct(B.QQQ.dd_median, 0)}</td><td>${pct(B.SPY.dd_median, 0)}</td></tr>`;
+  document.querySelector("#t_hair tbody").innerHTML = STATS.haircut.filter(h => !h.version).map(h =>
+    `<tr class="${h.haircut === 0.25 ? "hl" : ""}"><td>${h.haircut === 0 ? "Same as backtest" : "Sharpe " + (h.haircut * 100) + "% lower"}</td><td>${h.sharpe.toFixed(2)}</td><td>${pct(h.expected_cagr)}</td></tr>`).join("");
+}
+
+function render() {
+  charts.splice(0).forEach(c => c.destroy());
+  const S = PAL(), ink3 = css("--ink-3");
+  charts.push(line("c_ec", DATA.ec, [S[0], S[3], S[1], ink3, S[2]], { dash: { "No sleeve limits (unsafe)": [5, 4], "SPY": [2, 3] } }));
+  const dd = line("c_dd", DATA.dd, [S[0], S[1], ink3], { log: false, fmt: v => pct(v, 0), tip: v => pct(v), yMax: 0 });
+  dd.options.plugins.legend.display = false; dd.update(); charts.push(dd);
+  const Y = DATA.years;
+  charts.push(bars("c_years", Y.labels, [
+    { label: "Goal-25 Safe", data: Y.series["Goal-25 Safe"], backgroundColor: S[0] },
+    { label: "QQQ", data: Y.series.QQQ, backgroundColor: S[1] },
+    { label: "SPY", data: Y.series.SPY, backgroundColor: ink3 } ]));
+  charts.push(line("c_sleeves", DATA.sleeves, S));
+  charts.push(line("c_wf", DATA.wf_ec, [S[0], S[2], S[6], S[1]]));
+  charts.push(line("c_rc", DATA.roll_cagr, [S[0], S[1], ink3], { log: false, fmt: v => pct(v, 0), tip: v => pct(v) }));
+  charts.push(line("c_rs", DATA.roll_sharpe, [S[0], S[1], ink3], { log: false, fmt: v => v.toFixed(1), tip: v => v.toFixed(2) }));
+  const b = DATA.boot, lbl = b.bins.slice(0, -1).map((x, i) => `${(x * 100).toFixed(1)}–${(b.bins[i + 1] * 100).toFixed(1)}%`);
+  const bc = bars("c_boot", lbl, [
+    { label: "Goal-25 Safe", data: b["Goal-25 Safe"].map(v => v / 10000), backgroundColor: S[0] },
+    { label: "QQQ", data: b.QQQ.map(v => v / 10000), backgroundColor: S[1] } ],
+    { fmt: v => pct(v, 0), tip: v => pct(v) + " of paths" });
+  bc.options.scales.x.ticks.callback = function (v) { const l = this.getLabelForValue(v); return Math.round(parseFloat(l.split("–")[0])) + "%"; };
+  bc.options.scales.x.ticks.maxTicksLimit = 8;
+  bc.options.datasets = { bar: { barPercentage: 1, categoryPercentage: 0.9 } };
+  bc.update(); charts.push(bc);
+}
+
+tables();
+if (window.Chart) {
+  Chart.defaults.font.family = css("--f-ui");
+  render();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+}
+</script>
