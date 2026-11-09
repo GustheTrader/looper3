@@ -27,6 +27,9 @@ def growth(df):
     return (1 + df).cumprod().where(df.notna())
 
 
+TEMPLATE = {"research": "cf_research.html"}.get(sys.argv[1] if len(sys.argv) > 1 else "", "cf_plan.html")
+
+
 def main():
     M = pd.read_csv(RES / "CF_monthly.csv", index_col=0, parse_dates=True)
     SL = pd.read_csv(RES / "CF_sleeves_monthly.csv", index_col=0, parse_dates=True)
@@ -256,11 +259,40 @@ def main():
             "E deck entries, no kill switch or target, mid (upper bound)", "F deck entries, no kill/target, market fills",
             "G deck entries, no kill/target, MASTER fills", "G3 same, 3% sleeve risk per trade"]
     d["decay"] = {"rows": [{"name": k, **{p_: DS["results"][k][p_] for p_ in ["design", "test"]}, "trades": DS["results"][k]["trades"],
-                            "win": DS["results"][k]["win"], "avg": DS["results"][k]["avg_trade"]}
+                            "win": DS["results"][k]["win"], "avg": DS["results"][k]["avg_trade"], "yearly": DS["results"][k]["yearly"]}
                            for k in DS["results"]],
                   "facts": DS["facts"], "liquid": DS["liquid_universe"], "by_ticker": DS["results"]["G deck entries, no kill/target, MASTER fills"]["by_ticker"],
                   "ec": pack(growth(((1 + DD_[show]).resample("ME").prod() - 1)))}
     d["decay_diag"] = json.loads((RES / "DECAY_diagnostics.json").read_text())
+    # ---------- investor profiles: same tested core + trading sleeves at different risk levels
+    def _pstat(r):
+        o = {}
+        for per, sl in [("full", slice(None, None)), ("test", slice("2021-01-01", None))]:
+            x = r.loc[sl]
+            m_ = _sm.metrics(x, Dd.rf.loc[sl]); mm = (1 + x).resample("ME").prod() - 1; eq_ = (1 + mm).cumprod()
+            yr_ = (1 + x).groupby(x.index.year).prod() - 1
+            o[per] = {"cagr": m_["cagr"], "sharpe": m_["sharpe"], "vol": m_["vol"], "dd_month": float((eq_ / eq_.cummax() - 1).min()),
+                      "dd_daily": m_["max_dd"], "worst_year": float(yr_[yr_.index > 2015].min()), "best_year": float(yr_.max()),
+                      "years_up": int((yr_[(yr_.index > 2015) & (yr_.index < 2026)] > 0).sum()), "years": int(((yr_.index > 2015) & (yr_.index < 2026)).sum())}
+        return o
+    PW = {"steady": {"core": 0.40, "vix_fade": 0.20, "ff_calendars": 0.20, "carry": 0.10, "momentum_ls": 0.10},
+          "balanced": {k: v for k, v in WCH["weights"].items() if v > 0 and k != "decay"},
+          "assertive": {"core": 0.80, "vix_fade": 0.085, "ff_calendars": 0.06, "carry": 0.03, "momentum_ls": 0.025}}
+    for k_, w_ in PW.items():
+        assert abs(sum(w_.values()) - 1) < 1e-9, (k_, sum(w_.values()))
+        assert w_["vix_fade"] * 0.5 <= 0.10 + 1e-12, "short-VIX notional above 10% of the account"
+    mix = lambda w_: sum(v * Dd[k] for k, v in w_.items())
+    prof_defs = [("steady", "Steady", PW["steady"]["core"], mix(PW["steady"])), ("balanced", "Balanced", PW["balanced"]["core"], mix(PW["balanced"])),
+                 ("assertive", "Assertive", PW["assertive"]["core"], mix(PW["assertive"])), ("balanced_lev", "Balanced + margin-capped leverage", 0.65, rr)]
+    pr_ = {}
+    for key_, nm_, c_, ser_ in prof_defs:
+        pr_[key_] = {"name": nm_, "core": c_, "weights": PW.get(key_, PW["balanced"]), **_pstat(ser_)}
+    pm_ = pd.DataFrame({v["name"]: mon(ser) for (k, _, _, ser), v in zip(prof_defs, pr_.values())})
+    py_ = (1 + pd.DataFrame({v["name"]: ser for (k, _, _, ser), v in zip(prof_defs[:3], list(pr_.values())[:3])})).groupby(Dd.index.year).prod() - 1
+    d["layer_lev_avg"] = round(float(lev.mean()), 2)
+    d["profiles"] = {"rows": pr_, "test_ec": pack(growth(pm_.loc["2021-01-01":])), "ec": pack(growth(pm_.iloc[:, :3])),
+                     "years": {"labels": [str(y) for y in py_.index], "series": {c: [round(float(v), 4) for v in py_[c]] for c in py_.columns}},
+                     "lev_target": L_REC}
     d["desk"] = json.loads((RES / "DESK_today.json").read_text())
     d["L_rec"] = L_REC
 
@@ -360,7 +392,7 @@ def main():
     }
     d["num_audit"] = aud.get("checks", [])
     import re as _re
-    main_html = (HERE / "cf_main.html").read_text()
+    main_html = (HERE / TEMPLATE).read_text()
     keys = set(_re.findall(r"\[\[(\w+)\]\]", main_html))
     missing = keys - set(FACTS)
     assert not missing, f"placeholders without a value: {missing}"

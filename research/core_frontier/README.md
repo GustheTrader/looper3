@@ -69,3 +69,9 @@ Re-run order: `fetch_perps.py`, `../momentum/fetch_data.py rf`, `study_carry.py`
   +12% at mid, and my first cost model charged ~1.8x the live quotes. `study_decay.py` now has the deck entries held to 30 days
   before expiry (versions G / G2 / G3) with costs scaled by 0.55. The weight rule (best 2015-20 Calmar) still does not pick a
   decay weight; it stays an optional tilt on the desk. `desk.py` keeps the last good tickets (flagged) when quotes are empty.
+
+## Investor page
+`build_cf_page.py` now builds `core_frontier.html` from `cf_plan.html`, an investor game plan: risk levels (Steady 40% core /
+Balanced 65% / Assertive 80%, each respecting every sleeve cap), what to own, a four-step build, rules per sleeve, today's
+desk, risk limits, evidence, optional sleeves, risks and verification. `python build_cf_page.py research` builds the full
+research log page from `cf_research.html`.
