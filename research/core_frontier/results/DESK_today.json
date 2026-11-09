@@ -125,5 +125,6 @@
   "signals": [
    "BOIL"
   ]
- }
+ },
+ "stale_note": "No live quotes at 2026-11-09 11:13 UTC (market closed or not yet open). Showing the last good tickets, from the 2026-11-06 close. Re-run desk.py after 10:00 New York time."
 }

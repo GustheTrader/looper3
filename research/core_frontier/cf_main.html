@@ -78,6 +78,7 @@
   <section>
     <h2>Execution desk: today's entries, worked like a master</h2>
     <p>Signals as of the [[last_date]] close, with tickets built from the real option chains (last-close quotes; on a weekend these are Friday's and can be wide). Sizes are per $100,000 of portfolio; scale linearly.</p>
+    <p class="warn" id="desk_stale" style="display:none"></p>
     <div class="tbl"><table id="t_desk_ff"><thead><tr><th>FF calendar</th><th>Real FF</th><th>Signal</th><th>Sell (front)</th><th>Buy (back)</th><th>Mid</th><th>Never pay above</th><th>Contracts / $100k</th></tr></thead><tbody></tbody></table></div>
     <div class="two">
       <div class="card"><h3>Other sleeves today</h3><div class="tbl"><table id="t_desk_other"><thead><tr><th>Sleeve</th><th>State</th><th>Why</th></tr></thead><tbody></tbody></table></div></div>
@@ -202,18 +203,26 @@
   </section>
 
   <section>
-    <h2>Structural decay (PTG deck): tested, not funded</h2>
-    <p>The deck's idea is real: leveraged and futures-based ETPs lose value mechanically (variance drag, daily rebalancing, roll). Since 2015 (or launch), buy-and-hold lost on every bear and volatility product below. The deck harvests it with 6–9-month debit put spreads (long at-the-money, short 10-delta) when Close &lt; EMA20 &lt; EMA50, ADX(10) &gt; 20 and RSI(2) &gt; 70 (plus contango for VIX products). Exits are the kill switch, a curve inversion, 50% of max profit, or 30 days before expiry. Risk is 1% of the portfolio per position. Option prices are Black-Scholes with each ETP's own realised vol, scaled and skewed to match today's real chains. Bid/ask is what those chains quote.</p>
+    <h2>Structural decay (PTG deck): the decay is real; the deck's exits and my first cost model were what failed</h2>
+    <p>You questioned a decay sleeve that lost money, since a put-spread on a decaying product is a short and should profit. You were right to push. I re-checked it, and my first write-up was wrong in two places. The rules: buy a ~7-month put spread (long at-the-money, short 10-delta) when Close &lt; EMA20 &lt; EMA50, ADX(10) &gt; 20 and RSI(2) &gt; 70 (plus contango for VIX products), on 16 leveraged ETPs. Prices are Black-Scholes with each ETP's own realised vol, scaled and skewed to today's live chains. Each position risks the debit only.</p>
     <div class="tbl"><table id="t_decay_facts"><thead><tr><th>ETP</th><th>Tracks</th><th>Leverage</th><th>Since</th><th>ETP per year</th><th>Underlying per year</th><th>Variance-drag formula</th></tr></thead><tbody></tbody></table></div>
+
+    <h3 class="sub">What was checked</h3>
+    <div class="tbl"><table id="t_dc_checks"><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+
+    <h3 class="sub">Results: it works once the deck's exits are removed and costs are realistic</h3>
     <div class="two">
-      <div class="card"><h3>Decay sleeve, growth of $1 (one sleeve, 1% risk per trade)</h3><div class="chart"><canvas id="c_decay" aria-label="Decay sleeve equity curves"></canvas></div></div>
-      <div class="card"><h3>Results</h3><div class="tbl"><table id="t_decay"><thead><tr><th>Version</th><th>2011–20 / yr</th><th>2021–26 / yr</th><th>Worst DD</th><th>Trades</th><th>Won</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card"><h3>Decay sleeve, growth of $1 (log scale)</h3><div class="chart"><canvas id="c_decay" aria-label="Decay sleeve equity curves"></canvas></div>
+        <p class="muted">Dotted lines are upper bounds that assume trading at mid prices. At the deck's 10%-of-sleeve risk per trade, drawdowns are severe (−78%); the 3% and 5% versions cut them to −29% and −46%.</p></div>
+      <div class="card"><h3>Versions</h3><div class="tbl"><table id="t_decay"><thead><tr><th>Version</th><th>2011–20 / yr</th><th>2021–26 / yr</th><th>Worst DD</th><th>Trades</th><th>Won</th></tr></thead><tbody></tbody></table></div></div>
     </div>
-    <div class="warn"><strong>Why it is not in the portfolio.</strong>
+    <div class="warn"><strong>What I got wrong, and what is still true.</strong>
       <ul class="tight">
-        <li><strong>The edge exists only at mid prices.</strong> With no trading costs the deck's trade makes [[dc_A0_d]] a year in 2011–20 and [[dc_A0_t]] in 2021–26. Paying the quoted bid/ask, it makes [[dc_A_d]] and [[dc_A_t]]. Six-to-nine-month options on these products are thin: at-the-money half-spreads of 7–30%, open interest often under 50 contracts.</li>
-        <li><strong>A master protocol helps in-sample but fails out of sample.</strong> 90-day tenors (the real holding period is about 50 days), only names with tight markets ([[decay_liquid]]), and one combo order at 30% of the spread give [[dc_C_d]] a year in 2011–20 but [[dc_C_t]] in 2021–26, including [[dc_C_2022]] in 2022.</li>
-        <li><strong>It is a hidden long-equity bet.</strong> A put spread on a 3× bear ETF profits when the index rises. In 2022 the index fell, the bear ETFs rallied, and the sleeve lost with the core instead of hedging it.</li>
+        <li><strong>Direction was never wrong.</strong> The spreads gain when the ETP falls: trade return has a [[dcd_corr]] correlation with the ETP's move ([[dcd_down]] when it falls over 30%, [[dcd_up]] when it rises over 30%). One trade repriced by hand matches to the last digit. The deck's signals on plain shares short (no options) made [[dcs_net]] per trade after a 10%/yr borrow fee ([[dcs_d]] in 2011–20, [[dcs_t]] in 2021–26).</li>
+        <li><strong>The deck's exits destroy the edge.</strong> At mid prices, the kill switch and 50% profit target give [[dc_A0_avg]] per trade. Holding to 30 days before expiry gives [[dc_E_avg]]. A put spread on a decaying product needs time, and the kill switch sells it after a few quiet weeks. I removed the kill switch and target after seeing this; 2011–20 alone picks the same version, but it is a change to the deck's rules.</li>
+        <li><strong>My first cost model charged [[dcr_ratio]] what the real chains quote.</strong> Crossing the market on real spreads costs about [[dcr_real]] of the spread's mid price per side (TECS and UVIX about 20%, SOXS 8%), not the [[dcr_model]] I used. I scaled costs down to match. Those are last-close quotes, with thin open interest (often under 50 contracts); live fills may differ.</li>
+        <li><strong>It is still a hidden long-equity bet.</strong> The engine is the four 3× bear ETFs (TECS, SOXS, SPXU, SQQQ), which won 79–87% of trades. In 2022 stocks fell, the bear ETFs rallied, and the sleeve lost [[dcg_2022]]. It adds return but also a tail the rest of the portfolio doesn't have.</li>
+        <li><strong>Decision.</strong> The mix rule (best 2015–20 Calmar, 2021–26 untouched) does not pick a decay weight: [[dcw_calmar_dec]] with decay versus [[dcw_calmar_base]] without. Decay mixes add [[dcw_add]] of return in 2021–26 but deepen the worst drawdown and the worst year (table in the edge section). It stays on the desk as an optional growth tilt, not in the published portfolio.</li>
         <li>The deck's VIX call backspread is the same structure tested in the margin layer (it lost about 12% a year per unit). The IBIT/BITX pair has under three years of data: BITX trailed 2× bitcoin by about 29 points a year, so the decay is real, but there is too little history to test the trade.</li>
       </ul></div>
   </section>
@@ -232,8 +241,8 @@
         <div class="tbl"><table id="t_hair"><thead><tr><th>If the live Sharpe is lower</th><th>Sharpe</th><th>Expected CAGR (approx.)</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
-    <div class="tbl"><table id="t_w"><thead><tr><th>Trading-sleeve mix (35%)</th><th>Fade</th><th>FF</th><th>Carry</th><th>Mom</th><th>Pred</th><th>2015–20 Calmar</th><th>2021–26 CAGR</th><th>2021–26 Max DD</th><th>2021–26 Calmar</th></tr></thead><tbody></tbody></table></div>
-    <p class="muted">The weights were chosen by the highest 2015–20 Calmar (month-end data), without looking at 2021–26. The differences between mixes are small, and the chosen mix gains in crisis years rather than on average.</p>
+    <div class="tbl"><table id="t_w"><thead><tr><th>Trading-sleeve mix (35%)</th><th>Fade</th><th>FF</th><th>Carry</th><th>Mom</th><th>Pred</th><th>Decay</th><th>2015–20 Calmar</th><th>2021–26 CAGR</th><th>2021–26 Max DD</th><th>2021–26 Calmar</th><th>2021–26 worst year</th></tr></thead><tbody></tbody></table></div>
+    <p class="muted">The weights were chosen by the highest 2015–20 Calmar (month-end data), without looking at 2021–26. The differences between mixes are small, and the chosen mix gains in crisis years rather than on average. The decay mixes add return in 2021–26 but deepen the worst drawdown and worst year, which is why the rule does not pick them.</p>
     <div class="tbl"><table id="t_var"><thead><tr><th>Core volatility target (65/35 kept)</th><th>CAGR full</th><th>CAGR 2021–26</th><th>Sharpe 2021–26</th><th>Max DD 2021–26</th></tr></thead><tbody></tbody></table></div>
     <div class="warn"><strong>What to expect live: below the backtest.</strong> The 65/35 split trades return for safety. Over 2021–26 it made [[cf_test_cagr]] a year against [[core_test_cagr]] for the core alone, but its worst month-end drawdown was [[cf_test_dd]] against [[core_test_dd]], and its worst year was [[cf_test_wy]] against [[core_test_wy]]. With a 25–50% haircut on the Sharpe (the table above), expect roughly [[exp_lo]]–[[exp_hi]] a year. Raising the core's risk target from 40% to 60% adds [[var_add]] a year in 2021–26 but deepens the worst drawdown from [[var_dd_lo]] to [[var_dd_hi]] (table above). The margin-capped leverage layer adds [[layer_add]] a year in 2021–26 ([[rec_test_cagr]] vs [[unlev_test_cagr]] on daily data) for a few points more drawdown. Beyond that, 25%+ needs a bigger core share.</div>
   </section>
@@ -398,6 +407,7 @@ function tables() {
 
   // ---------- desk
   const DK = DATA.desk;
+  if (DK.stale_note) { const w = document.getElementById("desk_stale"); w.textContent = DK.stale_note; w.style.display = ""; }
   document.querySelector("#t_desk_ff tbody").innerHTML = DK.ff.filter(r => !r.error).map(r => `<tr class="${r.signal ? "hl" : ""}"><td>${r.ticker} ${r.strike} calls</td><td>${r.ff.toFixed(2)}</td>
     <td><span class="pill ${r.signal ? "on" : "up"}">${r.signal ? "FF > 0.20: enter" : "no entry"}</span></td><td style="white-space:normal;min-width:170px">${r.sell}</td><td style="white-space:normal;min-width:170px">${r.buy}</td>
     <td>$${r.mid.toFixed(2)}</td><td>$${r.limit_max.toFixed(2)}</td><td style="white-space:normal;min-width:150px">${r.signal ? (r.contracts_per_100k > 0 ? r.contracts_per_100k : "0: one contract needs a $" + (r.min_portfolio_for_1 / 1000).toFixed(0) + "k portfolio") + " (" + r.size_rule + ")" : "—"}</td></tr>`).join("");
@@ -419,15 +429,23 @@ function tables() {
   document.querySelector("#t_vv_trades tbody").innerHTML = VV.trades.map(t => `<tr><td>${t.entry}</td><td>${t.exit}</td><td>${t.days}</td><td>${t.vix_entry.toFixed(1)}</td>
     <td class="${t.model < 0 ? "neg" : ""}">${pct(t.model)}</td><td class="${t.real_svxy < 0 ? "neg" : ""}">${pct(t.real_svxy)}</td></tr>`).join("");
   // ---------- decay
-  const DCY = DATA.decay;
+  const DCY = DATA.decay, DG = DATA.decay_diag;
+  const dcRows = [
+    ["Direction", `trade return vs ETP move: correlation ${DG.direction.corr_trade_return_vs_etp_move.toFixed(2)} (${DG.direction.n} trades). Average return by the ETP's move: ` +
+      Object.entries(DG.direction.by_move).map(([k, v]) => `${k.replace(/[()\[\]]/g, "")}: ${pct(v.avg_return, 0)}`).join(" · ")],
+    ["Priced by hand", `${DG.by_hand.trade.ticker} ${DG.by_hand.trade.entry}: ${pct(DG.by_hand.return_by_hand, 3)} by hand vs ${pct(DG.by_hand.return_in_backtest, 3)} in the backtest (short strike at ${pct(DG.by_hand.short_strike_pct_of_spot, 0)} of spot)`],
+    ["Same signals, shares short", `${DG.shares_short.trades} trades over ${DG.shares_short.avg_days.toFixed(0)} days: ${pct(DG.shares_short.mean, 1)} before and ${pct(DG.shares_short.mean_after_borrow, 1)} after a 10%/yr borrow fee; won ${pct(DG.shares_short.win, 0)}; worst ${pct(DG.shares_short.worst, 0)} (a short can lose more than 100%)`],
+    ["A put spread every month, no signal, mid prices", `${pct(DG.always_on_mid["k=1.0"].mean, 0)} per trade (${pct(DG.always_on_mid["k=1.0"].mean_2012_20, 0)} in 2012–20, ${pct(DG.always_on_mid["k=1.0"].mean_2021_26, 0)} in 2021–26) as the ETPs fell ${pct(-DG.always_on_mid["k=1.0"].avg_etp_move, 0)} on average over each hold`],
+    ["Bid/ask vs live quotes", `model charged ${DG.real_costs.ratio_model_to_real.toFixed(2)}× the real quote (median ${pct(DG.real_costs.median_model_pct, 0)} vs ${pct(DG.real_costs.median_real_pct, 0)} of the spread's mid, one side); costs now scaled by ${DG.real_costs.cost_scale_applied}`]];
+  document.querySelector("#t_dc_checks tbody").innerHTML = dcRows.map(r => `<tr><td style="text-align:left;white-space:normal;min-width:170px">${r[0]}</td><td style="text-align:left;white-space:normal;min-width:300px">${r[1]}</td></tr>`).join("");
   document.querySelector("#t_decay_facts tbody").innerHTML = DCY.facts.map(f => `<tr><td>${f.etp}</td><td>${f.underlying}</td><td>${f.L}×</td><td>${f.from.slice(0, 4)}</td>
     <td class="${f.etp_cagr < 0 ? "neg" : ""}">${pct(f.etp_cagr, 0)}</td><td>${pct(f.underlying_cagr, 0)}</td><td>${pct(-f.variance_drag_formula, 0)}</td></tr>`).join("");
-  document.querySelector("#t_decay tbody").innerHTML = DCY.rows.map(r => `<tr class="${r.name === "C master protocol" ? "hl" : ""}"><td style="white-space:normal;min-width:200px">${r.name.replace(/^[A-C]0? /, "")}</td>
+  document.querySelector("#t_decay tbody").innerHTML = DCY.rows.map(r => `<tr class="${r.name.startsWith("G deck") ? "hl" : ""}"><td style="white-space:normal;min-width:220px">${r.name.replace(/^[A-Z]\d? /, "")}</td>
     <td class="${r.design.cagr < 0 ? "neg" : ""}">${pct(r.design.cagr, 0)}</td><td class="${r.test.cagr < 0 ? "neg" : ""}">${pct(r.test.cagr, 0)}</td><td>${pct(Math.min(r.design.max_dd, r.test.max_dd), 0)}</td><td>${r.trades}</td><td>${pct(r.win, 0)}</td></tr>`).join("");
   // ---------- weights
   document.querySelector("#t_w tbody").innerHTML = DATA.wcands.map(c => `<tr class="${c.name === DATA.wchosen ? "hl" : ""}"><td style="white-space:normal;min-width:170px">${c.name.replace(/^W\d /, "")}</td>
-    <td>${pct(c.vix_fade, 0)}</td><td>${pct(c.ff_calendars, 0)}</td><td>${pct(c.carry, 0)}</td><td>${pct(c.momentum_ls, 0)}</td><td>${pct(c.prediction, 0)}</td>
-    <td>${c.design_calmar.toFixed(2)}</td><td>${pct(c.test_cagr)}</td><td>${pct(c.test_max_dd, 0)}</td><td>${c.test_calmar.toFixed(2)}</td></tr>`).join("");
+    <td>${pct(c.vix_fade, 0)}</td><td>${pct(c.ff_calendars, 0)}</td><td>${pct(c.carry, 0)}</td><td>${pct(c.momentum_ls, 0)}</td><td>${pct(c.prediction, 0)}</td><td>${pct(c.decay, 0)}</td>
+    <td>${c.design_calmar.toFixed(2)}</td><td>${pct(c.test_cagr)}</td><td>${pct(c.test_max_dd, 0)}</td><td>${c.test_calmar.toFixed(2)}</td><td>${pct(c.test_worst_year, 0)}</td></tr>`).join("");
 
   const L = DATA.layers;
   document.querySelector("#t_layer tbody").innerHTML = L.map(r =>

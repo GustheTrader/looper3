@@ -75,7 +75,7 @@
    "check": "portfolio = weights x sleeves",
    "status": "PASS",
    "pass": true,
-   "detail": "core 65%, vix_fade 15%, carry 5%, ff_calendars 10%, momentum_ls 5%, prediction 0%; max daily diff 1.6e-16"
+   "detail": "core 65%, vix_fade 15%, carry 5%, ff_calendars 10%, momentum_ls 5%, prediction 0%, decay 0%; max daily diff 1.6e-16"
   },
   {
    "id": "P2",
@@ -194,14 +194,42 @@
    "check": "decay put spreads never lose more than the debit",
    "status": "PASS",
    "pass": true,
-   "detail": "2613 simulated trades, min return -100.0%"
+   "detail": "2662 simulated trades, min return -100.0%"
   },
   {
    "id": "K2",
+   "check": "decay sleeve is pointed the right way (bearish put spread gains when the ETP falls)",
+   "status": "PASS",
+   "pass": true,
+   "detail": "correlation of trade return with the ETP's move -0.73; (-1.0, -0.3]: +48%; (0.3, 5.0]: -46%"
+  },
+  {
+   "id": "K3",
+   "check": "one decay trade repriced by independent code",
+   "status": "PASS",
+   "pass": true,
+   "detail": "TECS 2011-07-12: 4.0064% by hand vs 4.0064% in the backtest"
+  },
+  {
+   "id": "K4",
    "check": "decay entries fill the day after the signal",
    "status": "PASS",
    "pass": true,
-   "detail": "first trade SPXU: signal on 2011-07-11, filled 2011-07-12"
+   "detail": "first trade TECS: signal 2011-07-11, filled 2011-07-12"
+  },
+  {
+   "id": "K5",
+   "check": "decay bid/ask model checked against live quotes",
+   "status": "NOTE",
+   "pass": true,
+   "detail": "model charged 1.76x the real quote for the same spreads (median over 4 spreads); costs scaled by 0.55"
+  },
+  {
+   "id": "K6",
+   "check": "decay signals also work with plain shares short (no options)",
+   "status": "PASS",
+   "pass": true,
+   "detail": "419 trades, +6.4% per trade after 10%/yr borrow (+8.7% in 2011-20, +4.3% in 2021-26)"
   },
   {
    "id": "G1",
@@ -222,10 +250,10 @@
    "check": "prose figures come from the facts table",
    "status": "PASS",
    "pass": true,
-   "detail": "98 figures filled at build time"
+   "detail": "106 figures filled at build time"
   }
  ],
- "n_checks": 32,
+ "n_checks": 36,
  "n_fail": 0,
- "n_note": 6
+ "n_note": 7
 }

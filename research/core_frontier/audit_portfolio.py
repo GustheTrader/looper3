@@ -172,7 +172,7 @@ def layer_checks(D, rf):
     hc = np.select([vix < 0.20, vix < 0.30, vix < 0.50], [0.275, 0.36, 0.475], 0.65)
     core_m = D.w_btc_tilt * 1.0 + D.w_eth_tilt * 1.0 + D.w_trend_hard * 0.08 + D.w_psc_gld * 0.06 + (D.w_hard_rotation + D.w_space) * hc
     W = json.loads((RES / "WEIGHTS_choice.json").read_text())["weights"]
-    trade_m = W["vix_fade"] * 0.5 * 0.20 + W["momentum_ls"] * 2 * 0.15 + W["prediction"] * 0.20 + W["carry"] * D.carry_on + W["ff_calendars"] * D.ff_exposure
+    trade_m = W["vix_fade"] * 0.5 * 0.20 + W["momentum_ls"] * 2 * 0.15 + W["prediction"] * 0.20 + W["carry"] * D.carry_on + W["ff_calendars"] * D.ff_exposure + W.get("decay", 0.0) * D.decay_exposure
     u = 0.65 * core_m + trade_m
     vix_y = vix.shift(1).bfill()                                   # sizing uses yesterday's VIX for the haircut
     hc_y = np.select([vix_y < 0.20, vix_y < 0.30, vix_y < 0.50], [0.275, 0.36, 0.475], 0.65)
@@ -232,14 +232,26 @@ def new_sleeve_checks(D):
     T = pd.read_csv(RES / "DECAY_trades.csv", parse_dates=["entry", "exit"])
     bad = int((T.ret < -1 - 1e-12).sum())
     check("K1", "decay put spreads never lose more than the debit", bad == 0, f"{len(T)} simulated trades, min return {T.ret.min():.1%}")
+    DG = json.loads((RES / "DECAY_diagnostics.json").read_text())
+    dr = DG["direction"]
+    check("K2", "decay sleeve is pointed the right way (bearish put spread gains when the ETP falls)", dr["corr_trade_return_vs_etp_move"] < -0.5,
+          f"correlation of trade return with the ETP's move {dr['corr_trade_return_vs_etp_move']:.2f}; "
+          + "; ".join(f"{k}: {v['avg_return']:+.0%}" for k, v in list(dr["by_move"].items())[:1] + list(dr["by_move"].items())[-1:]))
+    bh = DG["by_hand"]
+    check("K3", "one decay trade repriced by independent code", abs(bh["return_by_hand"] - bh["return_in_backtest"]) < 1e-9 and bh["strike_match"],
+          f"{bh['trade']['ticker']} {bh['trade']['entry']}: {bh['return_by_hand']:.4%} by hand vs {bh['return_in_backtest']:.4%} in the backtest")
     import study_decay as sd
     px = sd.load()
-    vol2 = vol
-    S_, _, _, _ = sd.signals(px.reindex(vol2.index[vol2.index >= "2011-01-01"]), vol2)
-    t = T[T.key == "C master protocol"].iloc[0]
+    S_, _, _, _ = sd.signals(px.reindex(vol.index[vol.index >= "2011-01-01"]), vol)
+    t = T[T.key.str.startswith("G deck entries")].iloc[0]
     prev = S_.index[S_.index.get_loc(t.entry) - 1]
-    check("K2", "decay entries fill the day after the signal", bool(S_.at[prev, t.tk]),
-          f"first trade {t.tk}: signal on {prev.date()}, filled {t.entry.date()}")
+    check("K4", "decay entries fill the day after the signal", bool(S_.at[prev, t.tk]), f"first trade {t.tk}: signal {prev.date()}, filled {t.entry.date()}")
+    rc = DG["real_costs"]
+    check("K5", "decay bid/ask model checked against live quotes", abs(rc["cost_scale_applied"] * rc["ratio_model_to_real"] - 1) < 0.15,
+          f"model charged {rc['ratio_model_to_real']:.2f}x the real quote for the same spreads (median over {len(rc['rows'])} spreads); costs scaled by {rc['cost_scale_applied']}", note=True)
+    sh = DG["shares_short"]
+    check("K6", "decay signals also work with plain shares short (no options)", sh["mean_after_borrow"] > 0,
+          f"{sh['trades']} trades, {sh['mean_after_borrow']:+.1%} per trade after 10%/yr borrow ({sh['mean_2011_20']:+.1%} in 2011-20, {sh['mean_2021_26']:+.1%} in 2021-26)")
 
 
 # ------------------------------------------------------------------ G. page

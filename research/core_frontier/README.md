@@ -60,3 +60,12 @@ Re-run order: `fetch_perps.py`, `../momentum/fetch_data.py rf`, `study_carry.py`
 * `audit_ff.py`: FF replay with live-measured spreads and a "master" execution mode (one combo order, 30% of the spread).
 * `study_weights.py`: trading-sleeve weights chosen on 2015-20 only -> `WEIGHTS_choice.json` (read by every script).
 * `desk.py`: today's tickets from real chains (FF calendars, VIX fade state, carry state, decay paper signals).
+
+## Decay sleeve correction (review of the first write-up)
+
+* `diagnose_decay.py` -> `DECAY_diagnostics.json`: direction (trade return vs ETP move), by-hand reprice, same signals with
+  shares short, always-on put spreads, exit-rule comparison, model bid/ask vs live quotes.
+* Findings: the put spreads were pointed the right way. The deck's kill switch / 50% target cut the average trade from +45% to
+  +12% at mid, and my first cost model charged ~1.8x the live quotes. `study_decay.py` now has the deck entries held to 30 days
+  before expiry (versions G / G2 / G3) with costs scaled by 0.55. The weight rule (best 2015-20 Calmar) still does not pick a
+  decay weight; it stays an optional tilt on the desk. `desk.py` keeps the last good tickets (flagged) when quotes are empty.

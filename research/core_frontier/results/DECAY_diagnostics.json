@@ -1,0 +1,196 @@
+{
+ "direction": {
+  "corr_trade_return_vs_etp_move": -0.7337139528218644,
+  "n": 430,
+  "avg_etp_move_in_trade": -0.07965471256012575,
+  "by_move": {
+   "(-1.0, -0.3]": {
+    "n": 89,
+    "avg_return": 0.4834861888828767
+   },
+   "(-0.3, -0.1]": {
+    "n": 105,
+    "avg_return": 0.37901274356074505
+   },
+   "(-0.1, 0.0]": {
+    "n": 80,
+    "avg_return": 0.00202708054506992
+   },
+   "(0.0, 0.1]": {
+    "n": 80,
+    "avg_return": -0.13084820877238362
+   },
+   "(0.1, 0.3]": {
+    "n": 50,
+    "avg_return": -0.16175640961544804
+   },
+   "(0.3, 5.0]": {
+    "n": 26,
+    "avg_return": -0.46230824569034296
+   }
+  }
+ },
+ "by_hand": {
+  "trade": {
+   "ticker": "TECS",
+   "entry": "2011-07-12",
+   "exit": "2011-09-22"
+  },
+  "short_strike_pct_of_spot": 0.6892930715012807,
+  "strike_match": true,
+  "return_by_hand": 0.04006419422773799,
+  "return_in_backtest": 0.0400641942277379,
+  "etp_move": 0.08369201339072219
+ },
+ "shares_short": {
+  "trades": 419,
+  "mean": 0.07943594463069305,
+  "mean_after_borrow": 0.0638944058194645,
+  "win": 0.594272076372315,
+  "avg_days": 39.16467780429594,
+  "mean_2011_20": 0.08652832896103411,
+  "mean_2021_26": 0.04322415637510868,
+  "worst": -1.3472505399965646,
+  "borrow_assumed_per_year": 0.1
+ },
+ "always_on_mid": {
+  "k=1.0": {
+   "n": 1543,
+   "mean": 0.4890805883044074,
+   "median": 0.7024769699491802,
+   "win": 0.6986390149060272,
+   "mean_2012_20": 0.6290263155668187,
+   "mean_2021_26": 0.36276705888876604,
+   "avg_etp_move": -0.1563991407570034
+  },
+  "k=0.8": {
+   "n": 1543,
+   "mean": 0.6563173949234079,
+   "median": 1.01336312903944,
+   "win": 0.7154893065456902,
+   "mean_2012_20": 0.8084224072630665,
+   "mean_2021_26": 0.5190290237364412,
+   "avg_etp_move": -0.1563991407570034
+  },
+  "k=measured": {
+   "n": 1543,
+   "mean": 0.46066546781770756,
+   "median": 0.6575203275430905,
+   "win": 0.6934543097861309,
+   "mean_2012_20": 0.594004081527872,
+   "mean_2021_26": 0.34031544903122124,
+   "avg_etp_move": -0.1563991407570034
+  }
+ },
+ "exits": {
+  "A deck as written (kill + 50% target), market fills": {
+   "avg_trade": -0.13165764233672056,
+   "win": 0.32587064676616917,
+   "test_cagr": -0.51030297434918,
+   "design_cagr": -0.17816285071014137
+  },
+  "A0 deck as written, at mid (upper bound)": {
+   "avg_trade": 0.1218908924594136,
+   "win": 0.5441860465116279,
+   "test_cagr": 0.2523350473843351,
+   "design_cagr": 0.33959730488076567
+  },
+  "E deck entries, no kill switch or target, mid (upper bound)": {
+   "avg_trade": 0.4476632806023478,
+   "win": 0.7272727272727273,
+   "test_cagr": 0.4266417505104525,
+   "design_cagr": 0.5324879543532053
+  },
+  "F deck entries, no kill/target, market fills": {
+   "avg_trade": 0.22661444875169212,
+   "win": 0.6700507614213198,
+   "test_cagr": 0.09123190633020117,
+   "design_cagr": 0.2680460317665945
+  },
+  "G deck entries, no kill/target, MASTER fills": {
+   "avg_trade": 0.37220520826536996,
+   "win": 0.7070707070707071,
+   "test_cagr": 0.3136114976172182,
+   "design_cagr": 0.43867041078783386
+  },
+  "G2 same, 5% sleeve risk per trade": {
+   "avg_trade": 0.3710290636452354,
+   "win": 0.7107843137254902,
+   "test_cagr": 0.22788234976105182,
+   "design_cagr": 0.22898913984021285
+  },
+  "G3 same, 3% sleeve risk per trade": {
+   "avg_trade": 0.37102906364523547,
+   "win": 0.7107843137254902,
+   "test_cagr": 0.15772232701444455,
+   "design_cagr": 0.1408593582583244
+  },
+  "G4 same, my earlier (1.7x too high) costs": {
+   "avg_trade": 0.3153319765779127,
+   "win": 0.69,
+   "test_cagr": 0.21391490403272861,
+   "design_cagr": 0.37130470369696633
+  },
+  "G5 same, IV x1.2": {
+   "avg_trade": 0.23583290949363198,
+   "win": 0.6818181818181818,
+   "test_cagr": 0.1296184070387003,
+   "design_cagr": 0.28629727821192597
+  },
+  "G6 same, IV x0.8": {
+   "avg_trade": 0.5408832660998381,
+   "win": 0.745,
+   "test_cagr": 0.5429097793481867,
+   "design_cagr": 0.6414674940601335
+  }
+ },
+ "real_costs": {
+  "rows": [
+   {
+    "tk": "TECS",
+    "days": 220,
+    "debit_mid": 17.575,
+    "real_over_mid": 3.775000000000002,
+    "real_pct": 0.2147937411095307,
+    "model_pct": 0.36623518743816363,
+    "atm_oi": 0.0,
+    "wing_oi": 19.0
+   },
+   {
+    "tk": "TECS",
+    "days": 67,
+    "debit_mid": 14.525000000000002,
+    "real_over_mid": 2.8249999999999957,
+    "real_pct": 0.19449225473321827,
+    "model_pct": 0.3248514714792612,
+    "atm_oi": 40.0,
+    "wing_oi": 9.0
+   },
+   {
+    "tk": "SOXS",
+    "days": 102,
+    "debit_mid": 29.725,
+    "real_over_mid": 2.2749999999999986,
+    "real_pct": 0.07653490328006723,
+    "model_pct": 0.14830848691434453,
+    "atm_oi": 1.0,
+    "wing_oi": 18.0
+   },
+   {
+    "tk": "UVIX",
+    "days": 220,
+    "debit_mid": 25.0,
+    "real_over_mid": 4.899999999999999,
+    "real_pct": 0.19599999999999995,
+    "model_pct": 0.36081346925075275,
+    "atm_oi": 2.0,
+    "wing_oi": 1.0
+   }
+  ],
+  "median_real_pct": 0.19524612736660912,
+  "median_model_pct": 0.34283247036500697,
+  "ratio_model_to_real": 1.7558989516922832,
+  "cost_scale_applied": 0.55,
+  "note": "one side, % of the spread's mid price, strikes: ATM long / 10-delta short, last-close quotes"
+ }
+}

@@ -252,13 +252,15 @@ def main():
                "trades": vt.to_dict("records"), "corrections": pd.read_csv(LV / "data" / "cboe_corrections.csv").to_dict("records")}
     DS = json.loads((RES / "DECAY_summary.json").read_text())
     DD_ = pd.read_csv(RES / "DECAY_daily.csv", index_col=0, parse_dates=True)
-    show = ["A deck as written, market fills", "B deck as written, master fills", "A0 deck as written, at mid (upper bound)",
-            "C master protocol", "C0 master protocol, at mid (upper bound)"]
+    show = ["A deck as written (kill + 50% target), market fills", "A0 deck as written, at mid (upper bound)",
+            "E deck entries, no kill switch or target, mid (upper bound)", "F deck entries, no kill/target, market fills",
+            "G deck entries, no kill/target, MASTER fills", "G3 same, 3% sleeve risk per trade"]
     d["decay"] = {"rows": [{"name": k, **{p_: DS["results"][k][p_] for p_ in ["design", "test"]}, "trades": DS["results"][k]["trades"],
                             "win": DS["results"][k]["win"], "avg": DS["results"][k]["avg_trade"]}
                            for k in DS["results"]],
-                  "facts": DS["facts"], "liquid": DS["liquid_universe"], "by_ticker": DS["results"]["C master protocol"]["by_ticker"],
+                  "facts": DS["facts"], "liquid": DS["liquid_universe"], "by_ticker": DS["results"]["G deck entries, no kill/target, MASTER fills"]["by_ticker"],
                   "ec": pack(growth(((1 + DD_[show]).resample("ME").prod() - 1)))}
+    d["decay_diag"] = json.loads((RES / "DECAY_diagnostics.json").read_text())
     d["desk"] = json.loads((RES / "DESK_today.json").read_text())
     d["L_rec"] = L_REC
 
@@ -337,11 +339,20 @@ def main():
         "vv_vixy_corr": f"{VV['V2_futures_model']['VIXY']['corr']:.2f}", "vv_vixy_beta": f"{VV['V2_futures_model']['VIXY']['beta_real_on_model']:.2f}",
         "vv_vixy_m": pc(VV["V2_futures_model"]["VIXY"]["cagr_model"]), "vv_vixy_r": pc(VV["V2_futures_model"]["VIXY"]["cagr_real"]),
         "vv_ncorr": str(len(d["vv"]["corrections"])), "vv_cost": pc(list(VV["V6_costs"]["drag_per_year"].values())[0], 2),
-        "dc_A_d": pc(DS["results"]["A deck as written, market fills"]["design"]["cagr"], 0, True), "dc_A_t": pc(DS["results"]["A deck as written, market fills"]["test"]["cagr"], 0, True),
-        "dc_A0_d": pc(DS["results"]["A0 deck as written, at mid (upper bound)"]["design"]["cagr"], 0, True),
-        "dc_A0_t": pc(DS["results"]["A0 deck as written, at mid (upper bound)"]["test"]["cagr"], 0, True),
-        "dc_C_d": pc(DS["results"]["C master protocol"]["design"]["cagr"], 0, True), "dc_C_t": pc(DS["results"]["C master protocol"]["test"]["cagr"], 0, True),
-        "dc_C_2022": pc(DS["results"]["C master protocol"]["yearly"]["2022"], 0, True), "decay_liquid": ", ".join(DS["liquid_universe"]),
+        "dc_A0_avg": pc(DS["results"]["A0 deck as written, at mid (upper bound)"]["avg_trade"], 0, True),
+        "dc_E_avg": pc(DS["results"]["E deck entries, no kill switch or target, mid (upper bound)"]["avg_trade"], 0, True),
+        "dcg_2022": pc(DS["results"]["G deck entries, no kill/target, MASTER fills"]["yearly"]["2022"], 0),
+        "dcd_corr": f"{d['decay_diag']['direction']['corr_trade_return_vs_etp_move']:.2f}",
+        "dcd_down": pc(list(d['decay_diag']['direction']['by_move'].values())[0]['avg_return'], 0, True),
+        "dcd_up": pc(list(d['decay_diag']['direction']['by_move'].values())[-1]['avg_return'], 0, True),
+        "dcs_net": pc(d['decay_diag']['shares_short']['mean_after_borrow'], 1, True), "dcs_d": pc(d['decay_diag']['shares_short']['mean_2011_20'], 1, True),
+        "dcs_t": pc(d['decay_diag']['shares_short']['mean_2021_26'], 1, True),
+        "dcr_ratio": f"{d['decay_diag']['real_costs']['ratio_model_to_real']:.1f}×", "dcr_real": pc(d['decay_diag']['real_costs']['median_real_pct'], 0),
+        "dcr_model": pc(d['decay_diag']['real_costs']['median_model_pct'], 0),
+        "dcw_calmar_dec": f"{max(c['design_calmar'] for c in WCH['candidates'] if c['decay'] > 0):.2f}",
+        "dcw_calmar_base": f"{max(c['design_calmar'] for c in WCH['candidates'] if c['decay'] == 0):.2f}",
+        "dcw_add": f"{(max(c['test_cagr'] for c in WCH['candidates'] if c['decay'] > 0) - max(c['test_cagr'] for c in WCH['candidates'] if c['decay'] == 0)) * 100:.1f} points at most",
+        "decay_liquid": ", ".join(DS["liquid_universe"]),
         "cl_best_calmar": f"{_clb.test_calmar:.2f}", "cl_best_k": f"{_clb.k:g}× ({'VIX fade capped' if _clb.fade_capped else 'VIX fade levered too'})",
         "cl_best_cagr": pc(_clb.test_cagr, 1),
         "ff_top_years": ", ".join(f"{y} ({v * 100:+.1f}%)".replace("-", "−") for y, v in _ffy.sort_values(ascending=False).head(2).items()),

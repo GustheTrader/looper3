@@ -97,7 +97,17 @@ def main():
     S_, K_, _, _ = sd.signals(px, vol)
     last = S_.index[-1]
     desk["decay_paper"] = {"date": str(last.date()), "signals": [tk for tk in S_.columns if bool(S_.at[last, tk])]}
-    (OUT / "DESK_today.json").write_text(json.dumps(desk, indent=1, default=float))
+    ok = [r for r in desk["ff"] if "error" not in r]
+    f = OUT / "DESK_today.json"
+    if not ok and f.exists():                      # market closed / pre-open: Yahoo returns no bid/ask. Keep the last good tickets, flagged.
+        old = json.loads(f.read_text())
+        if any("error" not in r for r in old.get("ff", [])):
+            old["stale_note"] = (f"No live quotes at {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')} UTC (market closed or not yet open). "
+                                 f"Showing the last good tickets, from the {old['as_of']} close. Re-run desk.py after 10:00 New York time.")
+            f.write_text(json.dumps(old, indent=1, default=float))
+            print(old["stale_note"])
+            return
+    f.write_text(json.dumps(desk, indent=1, default=float))
     print(json.dumps(desk, indent=1, default=float))
 
 

@@ -38,7 +38,7 @@ OUT = HERE / "results"
 START, END = "2015-10-01", None      # END = None: run to the last date in the data (no hard-coded end)
 _WC = HERE / "results" / "WEIGHTS_choice.json"          # chosen on 2015-20 only by study_weights.py
 WEIGHTS = (json.loads(_WC.read_text())["weights"] if _WC.exists()
-           else {"core": 0.65, "vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05, "ff_calendars": 0.0})
+           else {"core": 0.65, "vix_fade": 0.15, "carry": 0.10, "momentum_ls": 0.05, "prediction": 0.05, "ff_calendars": 0.0, "decay": 0.0})
 FF_KEY = "deck core: SPY QQQ IWM DIA | deck rules | master"   # FF calendars, deck rules, master execution (audit_ff.py)
 
 
@@ -80,8 +80,14 @@ def main():
     carry = pd.read_csv(OUT / "CARRY_daily.csv", index_col=0, parse_dates=True)
     assert carry.index.equals(carry.index.sort_values()) and carry.carry.notna().loc[START:END].all(), "carry series has gaps"
     carry_r = carry.carry.reindex(idx)
+    # structural-decay sleeve: the corrected version (study_decay.py); T-bills while its weight is 0
+    _wc = json.loads(_WC.read_text()) if _WC.exists() else {}
+    dec_key = _wc.get("decay_key") or "G3 same, 3% sleeve risk per trade"
+    dec_all = pd.read_csv(OUT / "DECAY_daily.csv", index_col=0, parse_dates=True)
+    dec_expo = pd.read_csv(OUT / "DECAY_exposure.csv", index_col=0, parse_dates=True)[dec_key].reindex(idx).fillna(0.0)
+    dec_r = (dec_all[dec_key].reindex(idx).fillna(rf.reindex(idx))) if WEIGHTS.get("decay", 0) > 0 else rf.reindex(idx)
     sleeves = pd.DataFrame({"core": core, "vix_fade": fade, "carry": carry_r, "momentum_ls": mom, "prediction": pm,
-                            "ff_calendars": ff}).loc[START:END]
+                            "ff_calendars": ff, "decay": dec_r}).loc[START:END]
     assert abs(sum(WEIGHTS.values()) - 1) < 1e-12 and not sleeves[list(WEIGHTS)].isna().any().any(), "weights or sleeve gaps"
     tot = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS)
     trade_bucket = sum(WEIGHTS[k] * sleeves[k] for k in WEIGHTS if k != "core") / (1 - WEIGHTS["core"])
@@ -180,6 +186,7 @@ def main():
                           "core_gross": core_W.abs().sum(axis=1).loc[START:END],
                           "vix_fade": sleeves.vix_fade, "carry": sleeves.carry, "carry_on": carry.carry_on.reindex(sleeves.index),
                           "ff_calendars": sleeves.ff_calendars, "ff_exposure": ff_expo.reindex(sleeves.index),
+                          "decay": sleeves.decay, "decay_exposure": dec_expo.reindex(sleeves.index),
                           "momentum_ls": sleeves.momentum_ls, "prediction": sleeves.prediction}
                          | {f"w_{c}": core_W[c].loc[START:END] for c in core_W.columns})
     daily.to_csv(OUT / "CF_daily.csv")

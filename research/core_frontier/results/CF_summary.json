@@ -5,7 +5,8 @@
   "carry": 0.05,
   "ff_calendars": 0.1,
   "momentum_ls": 0.05,
-  "prediction": 0.0
+  "prediction": 0.0,
+  "decay": 0.0
  },
  "perf_full": {
   "Core Frontier Portfolio (65/35)": {
@@ -251,6 +252,18 @@
    "worst_year": 0.00010000022727041369,
    "best_year": 0.3442476374969752,
    "pct_years_25": 0.1
+  },
+  "decay": {
+   "cagr": 0.02171221315246097,
+   "ann_vol": 0.005499870097106648,
+   "sharpe": NaN,
+   "sortino": NaN,
+   "max_dd": 0.0,
+   "calmar": NaN,
+   "worst": 0.0,
+   "worst_year": 9.999999999887876e-05,
+   "best_year": 0.05252283500849497,
+   "pct_years_25": 0.0
   }
  },
  "sleeve_test": {
@@ -325,6 +338,18 @@
    "worst_year": 0.00010000022727041369,
    "best_year": 0.04938735241672432,
    "pct_years_25": 0.0
+  },
+  "decay": {
+   "cagr": 0.03197029103653137,
+   "ann_vol": 0.00584212330566442,
+   "sharpe": NaN,
+   "sortino": NaN,
+   "max_dd": 0.0,
+   "calmar": NaN,
+   "worst": 0.0,
+   "worst_year": 9.999999999887876e-05,
+   "best_year": 0.05252283500849497,
+   "pct_years_25": 0.0
   }
  },
  "corr": {
@@ -334,7 +359,8 @@
    "carry": 0.13,
    "momentum_ls": 0.03,
    "prediction": NaN,
-   "ff_calendars": 0.04
+   "ff_calendars": 0.04,
+   "decay": NaN
   },
   "vix_fade": {
    "core": 0.15,
@@ -342,7 +368,8 @@
    "carry": -0.01,
    "momentum_ls": -0.11,
    "prediction": NaN,
-   "ff_calendars": -0.0
+   "ff_calendars": -0.0,
+   "decay": NaN
   },
   "carry": {
    "core": 0.13,
@@ -350,7 +377,8 @@
    "carry": 1.0,
    "momentum_ls": 0.01,
    "prediction": NaN,
-   "ff_calendars": 0.02
+   "ff_calendars": 0.02,
+   "decay": NaN
   },
   "momentum_ls": {
    "core": 0.03,
@@ -358,7 +386,8 @@
    "carry": 0.01,
    "momentum_ls": 1.0,
    "prediction": NaN,
-   "ff_calendars": 0.07
+   "ff_calendars": 0.07,
+   "decay": NaN
   },
   "prediction": {
    "core": NaN,
@@ -366,7 +395,8 @@
    "carry": NaN,
    "momentum_ls": NaN,
    "prediction": NaN,
-   "ff_calendars": NaN
+   "ff_calendars": NaN,
+   "decay": NaN
   },
   "ff_calendars": {
    "core": 0.04,
@@ -374,7 +404,17 @@
    "carry": 0.02,
    "momentum_ls": 0.07,
    "prediction": NaN,
-   "ff_calendars": 1.0
+   "ff_calendars": 1.0,
+   "decay": NaN
+  },
+  "decay": {
+   "core": NaN,
+   "vix_fade": NaN,
+   "carry": NaN,
+   "momentum_ls": NaN,
+   "prediction": NaN,
+   "ff_calendars": NaN,
+   "decay": NaN
   }
  },
  "crisis": {

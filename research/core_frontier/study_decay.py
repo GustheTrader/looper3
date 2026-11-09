@@ -168,12 +168,16 @@ def signals(px, vol):
     return pd.DataFrame(sig), pd.DataFrame(kill), pd.DataFrame(iv), vix
 
 
-def run(px, vol, rf, cal, mode="master", iv_mult=1.0, start="2011-01-01", tenor=TENOR, exit_dte=EXIT_DTE, universe=None):
+COST_SCALE = 0.55      # my bid/ask model charged ~1.7x what live chains quote for the same spreads (audit: cost check vs real quotes)
+
+
+def run(px, vol, rf, cal, mode="master", iv_mult=1.0, start="2011-01-01", tenor=TENOR, exit_dte=EXIT_DTE, universe=None,
+        use_kill=True, tp=TP, risk=RISK, cost_scale=COST_SCALE):
     S_, K_, IV, vix = signals(px, vol)
     C = px["Close"]
     days = C.index[C.index >= start]
-    f = COST_FRAC[mode]
-    cash, pos, curve, trades = 1.0, {}, {}, []
+    f = COST_FRAC[mode] * cost_scale
+    cash, pos, curve, trades, expo = 1.0, {}, {}, [], {}
     pending = {}
     for t in days:
         r = float(rf.get(t, 0.0)) * 252
@@ -189,9 +193,9 @@ def run(px, vol, rf, cal, mode="master", iv_mult=1.0, start="2011-01-01", tenor=
             v = put(St, p["K1"], T, r, s) - put(St, p["K2"], T, r, s * cal[tk]["s"])
             p["mark"] = p["n"] * v
             why = None
-            if v >= p["debit_u"] + TP * (p["K1"] - p["K2"] - p["debit_u"]):
+            if tp is not None and v >= p["debit_u"] + tp * (p["K1"] - p["K2"] - p["debit_u"]):
                 why = "take profit"
-            elif bool(K_.at[t, tk]) if t in K_.index and K_.at[t, tk] == K_.at[t, tk] else False:
+            elif use_kill and (bool(K_.at[t, tk]) if t in K_.index and K_.at[t, tk] == K_.at[t, tk] else False):
                 why = "kill switch"
             elif T * 365 <= exit_dte:
                 why = "time"
@@ -217,7 +221,7 @@ def run(px, vol, rf, cal, mode="master", iv_mult=1.0, start="2011-01-01", tenor=
             v = put(St, K1, T, r, s) - put(St, K2, T, r, s * cal[tk]["s"])
             cost = f * wide * spread_cost(St, K1, K2, T, r, s, s * cal[tk]["s"], cal[tk])
             du = v + cost
-            budget = min(RISK * eq, cash)
+            budget = min(risk * eq, cash)
             if du <= 0 or budget <= 0 or du >= 0.9 * (K1 - K2):
                 continue
             cash -= budget
@@ -230,7 +234,9 @@ def run(px, vol, rf, cal, mode="master", iv_mult=1.0, start="2011-01-01", tenor=
                 pending[tk] = True
         cash *= np.exp(r / 252)
         curve[t] = cash + sum(p["mark"] for p in pos.values())
+        expo[t] = sum(p["mark"] for p in pos.values()) / curve[t] if curve[t] > 0 else 0.0
     e = pd.Series(curve)
+    run.last_exposure = pd.Series(expo)
     return e.pct_change().fillna(0), pd.DataFrame(trades)
 
 
@@ -272,21 +278,26 @@ def main():
     cal, med = calibration("decay_chain_calib.csv")             # ~7-month chains (deck tenor)
     cal90, med90 = calibration("decay_chain_calib_75d.csv")     # ~2-3-month chains (master tenor)
     liquid = [tk for tk, c in cal90.items() if c["own_chain"] and c["hs_atm"] <= 0.10]
+    NK = dict(use_kill=False, tp=None)             # the deck's kill switch / take-profit removed (see diagnostics: they destroy the edge)
     configs = {
-        "A deck as written, market fills": dict(cal=cal, mode="market"),
-        "B deck as written, master fills": dict(cal=cal, mode="master"),
+        "A deck as written (kill + 50% target), market fills": dict(cal=cal, mode="market"),
         "A0 deck as written, at mid (upper bound)": dict(cal=cal, mode="mid"),
-        "C master protocol": dict(cal=cal90, mode="master", tenor=90, exit_dte=21, universe=liquid),
-        "C master protocol, market fills": dict(cal=cal90, mode="market", tenor=90, exit_dte=21, universe=liquid),
-        "C master protocol, IV x0.8": dict(cal=cal90, mode="master", tenor=90, exit_dte=21, universe=liquid, iv_mult=0.8),
-        "C master protocol, IV x1.2": dict(cal=cal90, mode="master", tenor=90, exit_dte=21, universe=liquid, iv_mult=1.2),
-        "C0 master protocol, at mid (upper bound)": dict(cal=cal90, mode="mid", tenor=90, exit_dte=21, universe=liquid),
+        "E deck entries, no kill switch or target, mid (upper bound)": dict(cal=cal, mode="mid", **NK),
+        "F deck entries, no kill/target, market fills": dict(cal=cal, mode="market", **NK),
+        "G deck entries, no kill/target, MASTER fills": dict(cal=cal, mode="master", **NK),
+        "G2 same, 5% sleeve risk per trade": dict(cal=cal, mode="master", risk=0.05, **NK),
+        "G3 same, 3% sleeve risk per trade": dict(cal=cal, mode="master", risk=0.03, **NK),
+        "G4 same, my earlier (1.7x too high) costs": dict(cal=cal, mode="master", cost_scale=1.0, **NK),
+        "G5 same, IV x1.2": dict(cal=cal, mode="master", iv_mult=1.2, **NK),
+        "G6 same, IV x0.8": dict(cal=cal, mode="master", iv_mult=0.8, **NK),
+        "C master protocol (90d, liquid names)": dict(cal=cal90, mode="master", tenor=90, exit_dte=21, universe=liquid, **NK),
     }
-    res, daily, tr_all = {}, {}, {}
+    res, daily, tr_all, expo_all = {}, {}, {}, {}
     for key, kw in configs.items():
         c_ = kw.pop("cal")
         r, tr = run(px, vol, rf, c_, **kw)
         daily[key], tr_all[key] = r, tr
+        expo_all[key] = run.last_exposure
         res[key] = {p: stats(r, rf, sl) for p, sl in {"design": slice(None, "2020-12-31"), "test": slice("2021-01-01", None),
                                                       "full": slice(None, None)}.items()}
         res[key]["trades"] = int(len(tr))
@@ -300,6 +311,7 @@ def main():
         res[key]["yearly"] = {int(k): float(v) for k, v in ((1 + r).groupby(r.index.year).prod() - 1).items()}
     facts = decay_facts(load())
     pd.DataFrame(daily).to_csv(OUT / "DECAY_daily.csv")
+    pd.DataFrame(expo_all).to_csv(OUT / "DECAY_exposure.csv")
     pd.concat([t.assign(key=k) for k, t in tr_all.items() if len(t)]).to_csv(OUT / "DECAY_trades.csv", index=False)
     facts.to_csv(OUT / "DECAY_facts.csv", index=False)
     (OUT / "DECAY_summary.json").write_text(json.dumps({"results": res, "calibration": cal, "calibration_90d": cal90, "liquid_universe": liquid,
@@ -312,8 +324,9 @@ def main():
         print(k, {p: {x: round(y, 3) for x, y in v[p].items()} for p in ["design", "test"]}, "trades", v["trades"], "win", v["win"] and round(v["win"], 2),
               "avg", v["avg_trade"] and round(v["avg_trade"], 3), v["exits"])
     print("liquid universe:", liquid)
-    print("by ticker (C):", {k: (v["n"], round(v["win"], 2), round(v["avg"], 3)) for k, v in res["C master protocol"]["by_ticker"].items()})
-    print("yearly (C):", {a: round(b, 3) for a, b in res["C master protocol"]["yearly"].items()})
+    g_ = "G deck entries, no kill/target, MASTER fills"
+    print("by ticker (G):", {k: (v["n"], round(v["win"], 2), round(v["avg"], 3)) for k, v in res[g_]["by_ticker"].items()})
+    print("yearly (G):", {a: round(b, 3) for a, b in res[g_]["yearly"].items()})
 
 
 if __name__ == "__main__":

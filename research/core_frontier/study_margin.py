@@ -135,7 +135,8 @@ def trading_margin(D):
     (debits are fully paid: margin = open calendar value / sleeve equity, from the replay)."""
     on = D["carry_on"] if "carry_on" in D else 0.0
     ffx = D["ff_exposure"] if "ff_exposure" in D else 0.0
-    return TRADING_MARGIN_STATIC + W_TR["carry"] * on + W_TR.get("ff_calendars", 0.0) * ffx
+    dx = D["decay_exposure"] if "decay_exposure" in D else 0.0
+    return TRADING_MARGIN_STATIC + W_TR["carry"] * on + W_TR.get("ff_calendars", 0.0) * ffx + W_TR.get("decay", 0.0) * dx
 
 
 def utilisation(D, vix, L, hedged, trading_k=1.0):
